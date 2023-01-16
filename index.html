@@ -1,0 +1,62 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>node-player</title>
+
+</head>
+
+<body>
+    <header>
+        <h1>modern javascript implementation of node-player</h1>
+
+    </header>
+    <main>
+
+        <button id="play">PLAY</button>
+
+    </main>
+    <footer>
+
+    </footer>
+</body>
+
+<script type="module">
+
+
+    import { SC68BackendAdapter } from './sc68_backend_adapter.js';
+    import { NodePlayer } from './node_player.js';
+
+    const backend = new SC68BackendAdapter()
+    const player = new NodePlayer(backend)
+    player.setTraceMode(true)
+
+    const playButton = document.getElementById('play');
+
+    playButton.addEventListener('click', async (e) => {
+
+        console.log('play')
+
+        player.loadMusicFromURL(
+            'http://modland.com/pub/modules/SC68/Jochen%20Hippel/prehistorik%20tale.sc68',
+            {},
+            (function (filename) {
+              // onCompletion
+            }),
+            (function () {
+              // onFail
+            }),
+            (function (total, loaded) {
+              // onProgress
+            })
+        );
+    });
+
+
+
+</script>
+
+</html>
