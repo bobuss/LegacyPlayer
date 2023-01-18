@@ -36,115 +36,12 @@ export class SC68BackendAdapter extends EmsHEAP16BackendAdapter {
         this._replayCache = new Array();
     }
 
-    getAudioBuffer() {
-        var ptr = this.Module.ccall('emu_get_audio_buffer', 'number');
-        // make it a this.Module.HEAP16 pointer
-        return ptr >> 1;	// 2 x 16 bit samples
-    }
 
-    getAudioBufferLength() {
-        var len = this.Module.ccall('emu_get_audio_buffer_length', 'number');
-        return len;
-    }
 
-    computeAudioSamples() {
-        var status = this.Module.ccall('emu_compute_audio_samples', 'number');
 
-        var isError = this.Module.ccall('emu_is_error', 'number', ['number'], [status]);
-        if (isError) {
-            return -1;
-        } else {
-            var isWaiting = this.Module.ccall('emu_is_waiting', 'number', ['number'], [status]);
-
-            if (isWaiting) {
-                // eventually the "replay" will be loaded and normal
-                // processing will resume
-                ScriptNodePlayer.getInstance().setWait(true);
-                return -1;
-            } else {
-                if (this.Module.ccall('emu_is_track_change', 'number', ['number'], [status])) {
-                    //ScriptNodePlayer.getInstance().trace('emu_is_track_change')
-                    return 0;
-                }
-                else if (this.Module.ccall('emu_is_loop', 'number', ['number'], [status])) {
-                    //ScriptNodePlayer.getInstance().trace('emu_is_loop')
-                    return 1;
-                }
-                else if (this.Module.ccall('emu_is_end', 'number', ['number'], [status])) {
-                    //ScriptNodePlayer.getInstance().trace('emu_is_end')
-                    return 1;
-                }
-                return 0;
-            }
-        }
-    }
-
-    getMaxPlaybackPosition() {
-        return this.Module.ccall('emu_get_max_position', 'number');
-    }
-
-    getPlaybackPosition() {
-        return this.Module.ccall('emu_get_current_position', 'number');
-    }
-
-    seekPlaybackPosition(pos) {
-        return this.Module.ccall('emu_seek_position', 'number', ['number'], [pos]);
-    }
 
     getPathAndFilename(filename) {
         return ['/', filename];
-    }
-
-    loadMusicData(sampleRate, path, filename, data, options) {
-        // load the song's binary data
-        var buf = this.Module._malloc(data.length);
-        this.Module.HEAPU8.set(data, buf);
-
-        var timeout = -1;	// means: keep built-in timeout
-        if ((typeof options != 'undefined') && typeof options.timeout != 'undefined') {
-            timeout = options.timeout * 1000;
-        }
-        var ret = this.Module.ccall('emu_init', 'number',
-            ['number', 'number', 'number', 'number', 'number'],
-            [sc68BackendInitOnce, sampleRate, timeout, buf, data.length]);
-
-        sc68BackendInitOnce = true;
-        this.Module._free(buf);
-
-        if (ret == 0) {
-            var inputSampleRate = this.Module.ccall('emu_get_sample_rate', 'number');
-            this.resetSampleRate(sampleRate, inputSampleRate);
-        }
-
-        return ret;
-    }
-
-    evalTrackOptions(options) {
-        if (typeof options.timeout != 'undefined') {
-            // FIXME quite redundant - since sc68 also has a timeout.. (see above)
-            ScriptNodePlayer.getInstance().setPlaybackTimeout(options.timeout * 1000);
-        }
-        var track = options.track ? options.track : 0;	// frontend counts from 0
-        this._currentTrack = track + 1;					// sc68 starts counting at 1
-
-        // for sc68 "0" means "all"..
-        var ret = this.Module.ccall('emu_change_subsong', 'number', ['number'], [this._currentTrack]);
-
-        // it seems that the above doesn't work and that manual seeking has to be used instead..
-        if (this._currentTrack > 1) {
-            var o = new Object();
-            var seek = 0;
-            var i;
-            for (i = 1; i < this._currentTrack; i++) {
-                seek += this.getSongLength(i);
-            }
-
-            // hack; seeking doesnt seem to work before emu_compute_audio_samples is called
-            this.Module.ccall('emu_compute_audio_samples', 'number');
-            this.seekPlaybackPosition(seek);
-        }
-
-        return ret;
     }
 
     teardown() {
@@ -162,26 +59,6 @@ export class SC68BackendAdapter extends EmsHEAP16BackendAdapter {
         };
     }
 
-    getSongLength(track) {
-        var numAttr = 7;
-        ret = this.Module.ccall('emu_get_track_info', 'number', ['number'], [track]);
-        var array = this.Module.HEAP32.subarray(ret >> 2, (ret >> 2) + numAttr);
-        return parseInt(this.Module.UTF8ToString(array[5]));
-    }
-
-    updateSongInfo(filename, result) {
-        var numAttr = 7;
-        const ret = this.Module.ccall('emu_get_track_info', 'number', ['number'], [this._currentTrack]);
-
-        var array = this.Module.HEAP32.subarray(ret >> 2, (ret >> 2) + numAttr);
-        result.title = this.Module.UTF8ToString(array[0]);
-        result.author = this.Module.UTF8ToString(array[1]);
-        result.composer = this.Module.UTF8ToString(array[2]);
-        result.replay = this.Module.UTF8ToString(array[3]);
-        result.hwname = this.Module.UTF8ToString(array[4]);
-        result.songInMillis = parseInt(this.Module.UTF8ToString(array[5]));
-        result.numberOfTracks = parseInt(this.Module.UTF8ToString(array[6]));
-    }
 
 
     // --------------------------- async file loading stuff -------------------------

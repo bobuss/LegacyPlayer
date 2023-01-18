@@ -1,26 +1,27 @@
 import { SAMPLES_PER_BUFFER } from './constants.js'
 import { FileCache } from './file_cache.js'
 
+
 var setGlobalWebAudioCtx = function () {
-	if (typeof window._gPlayerAudioCtx == 'undefined') {	// cannot be instantiated 2x (so make it global)
-		var errText = 'Web Audio API is not supported in this browser';
-		try {
-			if ('AudioContext' in window) {
-				window._gPlayerAudioCtx = new AudioContext();
-			} else if ('webkitAudioContext' in window) {
-				window._gPlayerAudioCtx = new webkitAudioContext();		// legacy stuff
-			} else {
-				alert(errText + e);
-			}
-		} catch (e) {
-			alert(errText + e);
-		}
-	}
-	try {
-		if (window._gPlayerAudioCtx.state === 'suspended' && 'ontouchstart' in window) {	//iOS shit
-			window._gPlayerAudioCtx.resume();
-		}
-	} catch (ignore) { }
+    if (typeof window._gPlayerAudioCtx == 'undefined') {	// cannot be instantiated 2x (so make it global)
+        var errText = 'Web Audio API is not supported in this browser';
+        try {
+            if ('AudioContext' in window) {
+                window._gPlayerAudioCtx = new AudioContext();
+            } else if ('webkitAudioContext' in window) {
+                window._gPlayerAudioCtx = new webkitAudioContext();		// legacy stuff
+            } else {
+                alert(errText + e);
+            }
+        } catch (e) {
+            alert(errText + e);
+        }
+    }
+    try {
+        if (window._gPlayerAudioCtx.state === 'suspended' && 'ontouchstart' in window) {	//iOS shit
+            window._gPlayerAudioCtx.resume();
+        }
+    } catch (ignore) { }
 }
 
 
@@ -33,10 +34,11 @@ var setGlobalWebAudioCtx = function () {
 */
 export class NodePlayer {
 
-    constructor(backendAdapter, onPlayerReady, onTrackReadyToPlay, onTrackEnd, onUpdate) {
-        if (typeof backendAdapter === 'undefined') {
-            alert("fatal error: backendAdapter not specified");
-        }
+    // constructor(backendAdapter, onPlayerReady, onTrackReadyToPlay, onTrackEnd, onUpdate) {
+    constructor() {
+        // if (typeof backendAdapter === 'undefined') {
+        //     alert("fatal error: backendAdapter not specified");
+        // }
         // if (typeof onPlayerReady === 'undefined') {
         //     alert("fatal error: onPlayerReady not specified");
         // }
@@ -46,11 +48,15 @@ export class NodePlayer {
         // if (typeof onTrackEnd === 'undefined') {
         //     alert("fatal error: onTrackEnd not specified");
         // }
-        if (backendAdapter.getChannels() > 2) {
-            alert("fatal error: only 1 or 2 output channels supported");
-        }
-        this._backendAdapter = backendAdapter;
-        this._backendAdapter.setObserver(this);
+
+        // switch (backendType) {
+        //     case 'sc68':
+        //         this._backendAdapter = new SC68BackendAdapter();
+        //         this._backendAdapter.setObserver(this);
+        //         break;
+        //     default:
+        //         alert('you must provide a backend type.')
+        // }
 
         this._traceSwitch = false;
 
@@ -63,10 +69,10 @@ export class NodePlayer {
         this._basePath = ''
 
         // hooks that allow to react to specific events
-        this._onTrackReadyToPlay = function() {} //onTrackReadyToPlay;
-        this._onTrackEnd = function() {} //onTrackEnd;
-        this._onPlayerReady = function() {} //onPlayerReady;
-        this._onUpdate = function() {} //onUpdate;  // optional
+        this._onTrackReadyToPlay = function () { } //onTrackReadyToPlay;
+        this._onTrackEnd = function () { } //onTrackEnd;
+        this._onPlayerReady = function () { } //onPlayerReady;
+        this._onUpdate = function () { } //onUpdate;  // optional
 
 
         this._tickerStepWidth = 256;    // shortest available (i.e. tick every 256 samples)
@@ -111,6 +117,35 @@ export class NodePlayer {
 
         this._preLoadReady = false;
 
+    }
+
+    async load(url) {
+
+        await this.initByUserGesture()
+
+
+        await fetch(url)
+            .then(response => {
+                if (!response.ok) {
+                    throw new Error(response.status);
+                }
+                return response.arrayBuffer();
+            })
+            .then(buffer => {
+                return this.prepareTrackForPlayback(url, buffer)
+            })
+            .catch(error => {
+                // Handle/report error
+            });
+
+
+    }
+
+    prepareTrackForPlayback(url, data) {
+        this._isPaused = true;
+        this._isSongReady = false;
+
+        return this.initIfNeeded(data, {});
     }
 
 
@@ -365,83 +400,12 @@ export class NodePlayer {
     }
 
 
-    /**
-    * Allows to directly feed file data for files that are not loaded via XHR requests.
-    *
-    * This is a hack to support other asynchronous "sources". todo: generalize basic player
-    * design to better support Worker based impls
-    */
-    asyncSetFileData(filename, options, data) {  // data must be Uint8Array
-
-        this._fileReadyNotify = filename;
-
-        var fullFilename = ((options.basePath) ? options.basePath : this._basePath) + filename;  // this._basePath ever needed?
-        //      if (this.loadMusicDataFromCache(fullFilename, options, onCompletion, onFail, onProgress)) { return; }
-
-
-        var pfn = this._backendAdapter.getPathAndFilename(filename);
-        var fileHandle = this._backendAdapter.registerFileData(pfn, data);
-        if (typeof fileHandle === 'undefined') {
-            //  onFail();
-            return;
-        } else {
-            var cacheFilename = this._backendAdapter.mapCacheFileName(fullFilename);
-
-            this.getCache().setFile(cacheFilename, data);
-        }
-
-        this._isSongReady = false;
-        this.setWaitingForFile(false);
-        this.initIfNeeded(this.lastUsedFilename, this.lastUsedData, this.lastUsedOptions);
-
-        this.lastOnCompletion(filename);
-    }
-
-
-    /**
-    * Loads from a JavaScript File object - e.g. used for 'drag & drop'.
-    */
-    loadMusicFromTmpFile(file, options, onCompletion, onFail, onProgress) {
-        this.initByUserGesture();  // cannot be done from the callbacks below.. see iOS shit
-
-        var filename = file.name;  // format detection may depend on prefixes and postfixes..
-
-        this._fileReadyNotify = "";
-
-        var fullFilename = ((options.basePath) ? options.basePath : this._basePath) + filename;  // this._basePath ever needed?
-        if (this.loadMusicDataFromCache(fullFilename, options, onCompletion, onFail, onProgress)) { return; }
-
-        var reader = new FileReader();
-        reader.onload = function () {
-
-            var pfn = this._backendAdapter.getPathAndFilename(filename);
-            var data = new Uint8Array(reader.result);
-            var fileHandle = this._backendAdapter.registerFileData(pfn, data);
-            if (typeof fileHandle === 'undefined') {
-                onFail();
-                return;
-            } else {
-                var cacheFilename = this._backendAdapter.mapCacheFileName(fullFilename);
-                this.getCache().setFile(cacheFilename, data);
-            }
-            this.prepareTrackForPlayback(fullFilename, reader.result, options, onCompletion, onFail, onProgress);
-            onCompletion(filename);
-        }.bind(this);
-        reader.onprogress = function (oEvent) {
-            if (onProgress) {
-                onProgress(oEvent.total, oEvent.loaded);
-            }
-        }.bind(this);
-
-        reader.readAsArrayBuffer(file);
-    }
-
     isAppleShit() {
         return !!navigator.platform && /iPad|iPhone|iPod/.test(navigator.platform);
     }
 
 
-    initByUserGesture() {
+    async initByUserGesture() {
         // try to setup as much as possible while it is "directly triggered"
         // by "user gesture" (i.e. here).. seems POS iOS does not correctly
         // recognize any async-indirections started from here.. bloody Apple idiots
@@ -450,7 +414,8 @@ export class NodePlayer {
 
             this._sampleRate = window._gPlayerAudioCtx.sampleRate;
             this._correctSampleRate = this._sampleRate;
-            this._backendAdapter.resetSampleRate(this._sampleRate, -1);
+            // TODO see how to put that in the worklet
+            //this._backendAdapter.resetSampleRate(this._sampleRate, -1);
         } else {
             // just in case: handle Chrome's new bullshit "autoplay policy"
             if (window._gPlayerAudioCtx.state == "suspended") {
@@ -468,7 +433,19 @@ export class NodePlayer {
             if (this.isAppleShit()) this.iOSHack(ctx);
 
             this._analyzerNode = ctx.createAnalyser();
-            this._scriptNode = this.createScriptProcessor(ctx);
+            // this._scriptNode = this.createScriptProcessor(ctx);
+            const timestamp = Date.now()
+            await ctx.audioWorklet.addModule("processor.js?" + timestamp);
+            this._scriptNode = new AudioWorkletNode(
+                ctx,
+                'sc68-worklet'
+            );
+
+            this._scriptNode.port.postMessage({
+                type: 'resetSampleRate',
+                sampleRate: this._sampleRate
+            })
+
             this._gainNode = ctx.createGain();
 
             this._scriptNode.connect(this._gainNode);
@@ -492,130 +469,31 @@ export class NodePlayer {
         }
     }
 
-    /**
-    * Loads from an URL.
-    */
-    loadMusicFromURL(url, options, onCompletion, onFail, onProgress) {
-        this.initByUserGesture();  // cannot be done from the callbacks below.. see iOS shit
-
-        var fullFilename = this._backendAdapter.mapInternalFilename(options.basePath, this._basePath, url);
-        console.log(fullFilename)
-        this._fileReadyNotify = "";
-
-        if (this.loadMusicDataFromCache(fullFilename, options, onCompletion, onFail, onProgress)) {
-            return;
-        }
-
-        var xhr = new XMLHttpRequest();
-        xhr.open("GET", this._backendAdapter.mapUrl(fullFilename), true);
-        xhr.responseType = "arraybuffer";
-
-        xhr.onload = function (oEvent) {
-            this.trace("loadMusicFromURL successfully loaded: " + fullFilename);
-
-            if (!this.prepareTrackForPlayback(fullFilename, xhr.response, options, onCompletion, onFail, onProgress)) {
-                if (!this.isWaitingForFile()) {
-                    onFail();
-                }
-            } else {
-                onCompletion(fullFilename);
-            }
-            /*else {    // playback should be started from _onTrackReadyToPlay()
-              this.play();
-            }*/
-        }.bind(this);
-        xhr.onprogress = function (oEvent) {
-            if (onProgress) {
-                onProgress(oEvent.total, oEvent.loaded);
-            }
-        }.bind(this);
-        xhr.onreadystatuschange = function (oEvent) {
-            if (oReq.readyState == 4 && oReq.status == 404) {
-                this.trace("loadMusicFromURL failed to load: " + fullFilename);
-            }
-        }.bind(this);
-
-        xhr.send(null);
-    }
-
-
-    /*
-    * Manually perform some file input based initialization sequence -
-    * as/if required by the backend. (only needed for special cases)
-    */
-    uploadFile(file, options, onCompletion, onFail, onProgress) {
-        var reader = new FileReader();
-        reader.onload = function () {
-            var pfn = this._backendAdapter.getPathAndFilename(file.name);
-            var data = new Uint8Array(reader.result);
-            var fileHandle = this._backendAdapter.registerFileData(pfn, data);
-            if (typeof fileHandle === 'undefined') {
-                onFail();
-                return;
-            }
-            var status = this._backendAdapter.uploadFile(file.name, options);
-            if (status === 0) {
-                onCompletion(file.name);
-                this._onPlayerReady();
-            } else if (status == 1) {
-                onCompletion(file.name);
-            }
-        }.bind(this);
-        reader.onprogress = function (oEvent) {
-            if (onProgress) {
-                onProgress(oEvent.total, oEvent.loaded);
-            }
-        }.bind(this);
-
-        reader.readAsArrayBuffer(file);
-    }
-
-
     // ******** internal utils (MUST NOT be ued outside of the player or respective backendAdapters --------------
 
     /**
     * Load music data and prepare to play a specific track.
     */
-    prepareTrackForPlayback(fullFilename, data, options, onCompletion, onFail, onProgress) {
-        this._isPaused = true;
 
-        // hack: so we get back at the options during retry attempts
-        this.lastUsedFilename = fullFilename;
-        this.lastUsedData = data;
-        this.lastUsedOptions = options;
-        this.lastOnCompletion = onCompletion;
-
-        this._isSongReady = false;
-        this.setWaitingForFile(false);
-
-        return this.initIfNeeded(fullFilename, data, options);
-    }
 
     trace(str) {
         if (this._traceSwitch) { console.log(str); }
-    }
-
-    setWait(isWaiting) {
-        this.setWaitingForFile(isWaiting);
     }
 
     getDefaultSampleRate() {
         return this._correctSampleRate;
     }
 
-    initIfNeeded(fullFilename, data, options) {
-
-        var status = this.loadMusicData(fullFilename, data, options);
+    initIfNeeded(data, options) {
+        var status = this.loadMusicData(data, options);
 
         if (status < 0) {
             console.log('Failed in loadMusicData')
             this._isSongReady = false;
-            this.setWaitingForFile(true);
             this._initInProgress = false;
 
         } else if (status === 0) {
             //  this._isPaused= false;
-            this.setWaitingForFile(false);
             this._isSongReady = true;
             this._currentPlaytime = 0;
             this._initInProgress = false;
@@ -624,12 +502,13 @@ export class NodePlayer {
 
             // in scenarios where a synchronous file-load is involved this first call will typically fail
             // but trigger the file load
-            var ret = this._backendAdapter.evalTrackOptions(options);
-            if (ret !== 0) {
-                this.trace("error preparing track options");
-                return false;
-            }
-            this.updateSongInfo(fullFilename);
+            //var ret = this._backendAdapter.evalTrackOptions(options);
+            this._scriptNode.port.postMessage({
+                type: 'evalTrackOptions',
+                options: options
+            })
+
+            this.updateSongInfo();
 
             if ((this.lastUsedFilename == fullFilename)) {
                 if (this._fileReadyNotify == fullFilename) {
@@ -653,37 +532,6 @@ export class NodePlayer {
         return false;
     }
 
-    loadMusicDataFromCache(fullFilename, options, onCompletion, onFail, onProgress) {
-        // reset timeout handling (of previous song.. which still might be playing)
-        this._currentTimeout = -1;
-        this._currentPlaytime = 0;
-        this._isPaused = true;
-
-        var cacheFilename = this._backendAdapter.mapCacheFileName(fullFilename);
-        var data = this.getCache().getFile(cacheFilename);
-
-        if (typeof data != 'undefined') {
-
-            this.trace("loadMusicDataFromCache found cached file using name: " + cacheFilename);
-
-            if (!this.prepareTrackForPlayback(fullFilename, data, options, onCompletion, onFail, onProgress)) {
-                if (!this.isWaitingForFile()) {
-                    onFail();
-                }
-            } else {
-                onCompletion(fullFilename);
-            }
-            return true;
-        } else {
-            this.trace("loadMusicDataFromCache FAILED to find cached file using name: " + cacheFilename);
-        }
-        return false;
-    }
-
-    getAudioContext() {
-        this.initByUserGesture();  // for backward compatibility
-        return window._gPlayerAudioCtx; // exposed due to Chrome's new bullshit "autoplay policy"
-    }
 
     iOSHack(ctx) {
         try {
@@ -701,30 +549,35 @@ export class NodePlayer {
         } catch (ignore) { }
     }
 
-    updateSongInfo(fullFilename) {
+    updateSongInfo() {
         this._songInfo = {};
-        this._backendAdapter.updateSongInfo(fullFilename, this._songInfo);
+        //this._backendAdapter.updateSongInfo(fullFilename, this._songInfo);
+        this._scriptNode.port.postMessage({
+            type: 'updateSongInfo',
+            songInfo: this._songInfo
+        })
     }
 
-    loadMusicData(fullFilename, arrayBuffer, options) {
-
-        this._backendAdapter.teardown();
+    loadMusicData(arrayBuffer, options) {
 
         if (arrayBuffer) {
-            var pfn = this._backendAdapter.getPathAndFilename(fullFilename);
+            //var pfn = this._backendAdapter.getPathAndFilename(fullFilename);
 
             var data = new Uint8Array(arrayBuffer);
-            this._backendAdapter.registerFileData(pfn, data);  // in case the backend "needs" to retrieve the file by name
 
-            var cacheFilename = this._backendAdapter.mapCacheFileName(fullFilename);
-            this.getCache().setFile(cacheFilename, data);
+            //this._backendAdapter.registerFileData(pfn, data);  // in case the backend "needs" to retrieve the file by name
 
-            var ret = this._backendAdapter.loadMusicData(this._sampleRate, pfn[0], pfn[1], data, options);
+            //var ret = this._backendAdapter.loadMusicData(this._sampleRate, pfn[0], pfn[1], data, options);
 
-            if (ret === 0) {
-                this.resetBuffer();
-            }
-            return ret;
+            this.resetBuffer();
+            this._scriptNode.port.postMessage({
+                type: 'loadMusicData',
+                sampleRate: this._sampleRate,
+                data: data,
+                options: options
+            })
+
+            return 0;
         }
     }
 
@@ -817,7 +670,6 @@ export class NodePlayer {
         // backend will be stuck without this file and we better make
         // sure to not use it before it has been properly reinitialized
         this._isPaused = true;
-        this.setWaitingForFile(true);
         this._isSongReady = false;
 
         // requested data not available.. we better load it for next time
@@ -879,101 +731,6 @@ export class NodePlayer {
             //    the actual audio playback.
 
             this._cntTick++;  // only approximative: must be re-synced with each audio buffer
-        }
-    }
-
-    // called for 'onaudioprocess' to feed new batch of sample data
-    genSamples(event) {
-
-        var genStereo = this.isStereo() && event.outputBuffer.numberOfChannels > 1;
-
-        var output1 = event.outputBuffer.getChannelData(0);
-        var output2;
-        if (genStereo) {
-            output2 = event.outputBuffer.getChannelData(1);
-        }
-        if ((!this._isSongReady) || this.isWaitingForFile() || this._isPaused) {
-            var i;
-            for (i = 0; i < output1.length; i++) {
-                output1[i] = 0;
-                if (genStereo) { output2[i] = 0; }
-            }
-        } else {
-            this._baseTick = this._baseTick == null ? 0 : this._baseTick + this._maxTicks;
-            this._cntTick = this._baseTick;  // re-sync
-
-            var outSize = output1.length;
-
-            this._numberOfSamplesRendered = 0;
-
-            while (this._numberOfSamplesRendered < outSize) {
-                if (this._numberOfSamplesToRender === 0) {
-
-                    var status;
-                    if ((this._currentTimeout > 0) && (this._currentPlaytime > this._currentTimeout)) {
-                        this.trace("'song end' forced after " + this._currentTimeout / this._correctSampleRate + " secs");
-                        status = 1;
-                    } else {
-                        status = this._backendAdapter.computeAudioSamples();
-
-                    }
-
-                    if (status !== 0) {
-                        // no frame left
-                        this.fillEmpty(outSize, output1, output2);
-
-                        if (status < 0) {
-                            // file-load: emu just discovered that we need to load another file
-                            this._isPaused = true;
-                            this._isSongReady = false;     // previous init is invalid
-                            this.setWaitingForFile(true);
-                            return; // complete init sequence must be repeated
-                        }
-                        if (this.isWaitingForFile()) {
-                            // this state may just have been set by the backend.. try again later
-                            return;
-                        } else {
-                            if (status > 1) {
-                                this.trace("playback aborted with an error");
-                            }
-
-                            this._isPaused = true;  // stop playback (or this will retrigger again and again before new song is started)
-                            if (this._onTrackEnd) {
-                                this._onTrackEnd();
-                            }
-                            return;
-                        }
-                    }
-                    // refresh just in case they are not using one fixed buffer..
-                    this._sourceBuffer = this._backendAdapter.getAudioBuffer();
-                    this._sourceBufferLen = this._backendAdapter.getAudioBufferLength();
-
-                    if (this._pan != null)
-                        this._backendAdapter.applyPanning(this._sourceBuffer, this._sourceBufferLen, this._pan + 1.0);
-
-                    this._numberOfSamplesToRender = this._backendAdapter.getResampledAudio(this._sourceBuffer, this._sourceBufferLen);
-
-                    this._sourceBufferIdx = 0;
-                }
-
-                var resampleBuffer = this._backendAdapter.getResampleBuffer();
-                if (genStereo) {
-                    this.copySamplesStereo(resampleBuffer, output1, output2, outSize);
-                } else {
-                    this.copySamplesMono(resampleBuffer, output1, outSize);
-                }
-            }
-            // keep track how long we are playing: just filled one WebAudio buffer which will be played at
-            this._currentPlaytime += outSize * this._correctSampleRate / this._sampleRate;
-
-            // silence detection at end of song
-            if ((this._silenceStarttime > 0) && ((this._currentPlaytime - this._silenceStarttime) >= this._silenceTimeout * this._correctSampleRate) && (this._silenceTimeout > 0)) {
-                this._isPaused = true;  // stop playback (or this will retrigger again and again before new song is started)
-                if (this._onTrackEnd) {
-                    this._onTrackEnd();
-                }
-            }
-
         }
     }
 
@@ -1072,10 +829,6 @@ export class NodePlayer {
             // async scenario:  runtime is NOT ready (e.g. emscripten WASM)
             this["deferredPreload"] = [files, onCompletionHandler];
         }
-    }
-
-    setWaitingForFile(val) {
-        this.getCache().setWaitingForFile(val);
     }
 
     isWaitingForFile() {

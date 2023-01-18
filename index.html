@@ -26,12 +26,9 @@
 
 <script type="module">
 
-
-    import { SC68BackendAdapter } from './sc68_backend_adapter.js';
     import { NodePlayer } from './node_player.js';
 
-    const backend = new SC68BackendAdapter()
-    const player = new NodePlayer(backend)
+    const player = new NodePlayer('sc68')
     player.setTraceMode(true)
 
     const playButton = document.getElementById('play');
@@ -40,19 +37,9 @@
 
         console.log('play')
 
-        player.loadMusicFromURL(
-            'http://modland.com/pub/modules/SC68/Jochen%20Hippel/prehistorik%20tale.sc68',
-            {},
-            (function (filename) {
-              // onCompletion
-            }),
-            (function () {
-              // onFail
-            }),
-            (function (total, loaded) {
-              // onProgress
-            })
-        );
+        player.load('http://modland.com/pub/modules/SNDH/Furax/virtual%20escape%20theme.sndh');
+
+
     });
 
 
