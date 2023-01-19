@@ -202,14 +202,6 @@ class AudioBackendAdapterBase {
         return this.channels;
     }
 
-    // ************* optional: setup related
-    /*
-    * Implement if subclass needs additional setup logic.
-    */
-    isAdapterReady() {
-        return true;
-    }
-
     /*
     * Creates the URL used to retrieve the song file.
     */
@@ -313,14 +305,6 @@ class AudioBackendAdapterBase {
         return out;
     }
 
-    // used for interaction with player
-    setObserver(o) {
-        this.observer = o;
-    }
-
-    notifyAdapterReady() {
-        if (typeof this.observer !== "undefined") this.observer.notify();
-    }
 
     error(name) {
         console.log("fatal error: abstract method '" + name + "' must be defined");
@@ -409,33 +393,12 @@ class AudioBackendAdapterBase {
 /*
 * Emscripten based backends that produce 16-bit sample data.
 *
-* NOTE: This impl adds handling for asynchronously initialized 'backends', i.e.
-*       the 'backend' that is passed in, may not yet be usable (see WebAssebly based impls:
-    *       here a respective "onRuntimeInitialized" event will eventually originate from the 'backend').
-*       The 'backend' allows to register a "adapterCallback" hook to propagate the event - which is
-*       used here. The player typically observes the backend-adapter and when the adapter state changes, a
-*       "notifyAdapterReady" is triggered so that the player is notified of the change.
 */
 class EmsHEAP16BackendAdapter extends AudioBackendAdapterBase {
 
     constructor(backend, channels) {
         super(channels, 2)
         this.Module = backend;
-
-        // required if WASM (asynchronously loaded) is used in the backend impl
-        this.Module["adapterCallback"] = function () {   // when Module is ready
-            this.doOnAdapterReady();  // hook allows to perform additional initialization
-            this.notifyAdapterReady();  // propagate to change to player
-        }.bind(this);
-    }
-
-    doOnAdapterReady() { }
-    // noop, to be overridden in subclasses
-
-    /* async emscripten init means that adapter may not immediately be ready - see async WASM compilation */
-    isAdapterReady() {
-        if (typeof this.Module.notReady === "undefined") return true; // default for backward compatibility
-        return !this.Module.notReady;
     }
 
     readFloatSample(buffer, idx) {
@@ -463,7 +426,7 @@ class EmsHEAP16BackendAdapter extends AudioBackendAdapterBase {
 
 }
 
-const SAMPLES_PER_BUFFER = 16384; //1024
+const SAMPLES_PER_BUFFER = 1024; //1024
 
 const backend_module = backend_SC68();
 
@@ -726,12 +689,15 @@ class SC68Worklet extends AudioWorkletProcessor {
         const { data } = e;
         console.log('onmessage ' + data.type)
         switch (data.type) {
+
             case 'loadMusicData':
                 this.isSongReady = (this.backendAdapter.loadMusicData(data.sampleRate, data.data, data.options) == 0)
                 break;
+
             case 'evalTrackOptions':
                 this.backendAdapter.evalTrackOptions(data.options);
                 break;
+
             case 'updateSongInfo':
                 const songInfo = this.backendAdapter.updateSongInfo();
                 this.port.postMessage({
@@ -739,17 +705,26 @@ class SC68Worklet extends AudioWorkletProcessor {
                     songInfo: songInfo
                 });
                 break;
+
             case 'resetSampleRate':
                 this.backendAdapter.resetSampleRate(data.sampleRate, -1);
+                break;
+
             case 'play':
                 this.isPaused = false;
                 break;
+
             case 'pause':
                 this.isPaused = true;
                 break;
+
             case 'registerFileData':
                 this.backendAdapter.registerFileData(data.name, data.payload)
-                break
+                break;
+
+            case 'setTrack':
+                this.backendAdapter.evalTrackOptions({track: data.track})
+                break;
 
         }
     }
@@ -892,19 +867,15 @@ class SC68Worklet extends AudioWorkletProcessor {
                             // this.isPaused = true;
                             this.isSongReady = false;     // previous init is invalid
                             return true; // complete init sequence must be repeated
-                        }
-                        if (this.isWaitingForFile()) {
-                            // this state may just have been set by the backend.. try again later
-                            return;
                         } else {
                             if (status > 1) {
                                 this.trace("playback aborted with an error");
                             }
 
                             this.isPaused = true;  // stop playback (or this will retrigger again and again before new song is started)
-                            if (this.onTrackEnd) {
-                                this.onTrackEnd();
-                            }
+                            this.port.postMessage({
+                                type: 'onTrackEnd'
+                            });
                             return;
                         }
                     }
@@ -934,9 +905,9 @@ class SC68Worklet extends AudioWorkletProcessor {
             // silence detection at end of song
             if ((this.silenceStarttime > 0) && ((this.currentPlaytime - this.silenceStarttime) >= this.silenceTimeout * this.correctSampleRate) && (this.silenceTimeout > 0)) {
                 this.isPaused = true;  // stop playback (or this will retrigger again and again before new song is started)
-                if (this.onTrackEnd) {
-                    this.onTrackEnd();
-                }
+                this.port.postMessage({
+                    type: 'onTrackEnd'
+                });
             }
         }
         return true

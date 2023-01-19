@@ -19,6 +19,7 @@
         <button id="load">LOAD</button>
         <button id="play">PLAY</button>
         <button id="stop">STOP</button>
+        <button id="next">TRACK 4</button>
 
         <canvas width="512" height="128" id="visualizer"></canvas>
 
@@ -32,14 +33,18 @@
 
     import { NodePlayer } from './node_player.js';
 
-    const canvas = document.getElementById('visualizer')
+    const songUrl = 'http://modland.com/pub/modules/SNDH/Jochen%20Hippel/wings%20of%20death.sndh'
+    // 'http://modland.com/pub/modules/SNDH/Furax/virtual%20escape%20theme.sndh'
+    // 'https://modland.com/pub/modules/SC68/Tao/magnetic%20(sid%20emulator%20version).sc68'
 
-    const player = new NodePlayer(canvas)
+    const player = new NodePlayer()
+
+    const canvas = document.getElementById('visualizer')
+    player.enableSpectrum(canvas)
 
     const loadButton = document.getElementById('load');
     loadButton.addEventListener('click', async (e) => {
-        //await player.load('http://modland.com/pub/modules/SNDH/Furax/virtual%20escape%20theme.sndh');
-        await player.load('https://modland.com/pub/modules/SC68/Tao/magnetic%20(sid%20emulator%20version).sc68');
+        await player.load(songUrl, 2);
     });
 
     const playButton = document.getElementById('play');
@@ -47,9 +52,14 @@
         player.play()
     });
 
-    const stopyButton = document.getElementById('stop');
-    stopyButton.addEventListener('click', async (e) => {
+    const stopButton = document.getElementById('stop');
+    stopButton.addEventListener('click', async (e) => {
         player.pause()
+    });
+
+    const nextButton = document.getElementById('next');
+    nextButton.addEventListener('click', async (e) => {
+        player.setTrack(4)
     });
 
 
