@@ -16,7 +16,11 @@
     </header>
     <main>
 
+        <button id="load">LOAD</button>
         <button id="play">PLAY</button>
+        <button id="stop">STOP</button>
+
+        <canvas width="512" height="128" id="visualizer"></canvas>
 
     </main>
     <footer>
@@ -28,20 +32,25 @@
 
     import { NodePlayer } from './node_player.js';
 
-    const player = new NodePlayer('sc68')
-    player.setTraceMode(true)
+    const canvas = document.getElementById('visualizer')
 
-    const playButton = document.getElementById('play');
+    const player = new NodePlayer(canvas)
 
-    playButton.addEventListener('click', async (e) => {
-
-        console.log('play')
-
-        player.load('http://modland.com/pub/modules/SNDH/Furax/virtual%20escape%20theme.sndh');
-
-
+    const loadButton = document.getElementById('load');
+    loadButton.addEventListener('click', async (e) => {
+        //await player.load('http://modland.com/pub/modules/SNDH/Furax/virtual%20escape%20theme.sndh');
+        await player.load('https://modland.com/pub/modules/SC68/Tao/magnetic%20(sid%20emulator%20version).sc68');
     });
 
+    const playButton = document.getElementById('play');
+    playButton.addEventListener('click', async (e) => {
+        player.play()
+    });
+
+    const stopyButton = document.getElementById('stop');
+    stopyButton.addEventListener('click', async (e) => {
+        player.pause()
+    });
 
 
 </script>

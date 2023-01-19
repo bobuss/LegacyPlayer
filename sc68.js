@@ -1,7 +1,7 @@
 
 var backend_SC68 = (() => {
   var _scriptDir = import.meta.url;
-  
+
   return (
 async function(config) {
   var backend_SC68 = config || {};
