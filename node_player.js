@@ -1,30 +1,3 @@
-import { SAMPLES_PER_BUFFER } from './constants.js'
-import { FileCache } from './file_cache.js'
-
-
-var setGlobalWebAudioCtx = function () {
-    if (typeof window.gPlayerAudioCtx === undefined) {	// cannot be instantiated 2x (so make it global)
-        var errText = 'Web Audio API is not supported in this browser';
-        try {
-            if ('AudioContext' in window) {
-                window.gPlayerAudioCtx = new AudioContext();
-            } else if ('webkitAudioContext' in window) {
-                window.gPlayerAudioCtx = new webkitAudioContext();		// legacy stuff
-            } else {
-                alert(errText + e);
-            }
-        } catch (e) {
-            alert(errText + e);
-        }
-    }
-    try {
-        if (window.gPlayerAudioCtx.state === 'suspended' && 'ontouchstart' in window) {	//iOS shit
-            window.gPlayerAudioCtx.resume();
-        }
-    } catch (ignore) { }
-}
-
-
 /**
 * Generic ScriptProcessor based WebAudio music player (end user API).
 *
@@ -47,7 +20,7 @@ export class NodePlayer {
         // general WebAudio stuff
         this.gainNode;
         this.analyzerNode;
-        this.scriptNode;
+        this.audioWorkletNode;
 
         // --------------- player status stuff ----------
 
@@ -85,17 +58,17 @@ export class NodePlayer {
         const timestamp = Date.now()
 
         this.audioContext.audioWorklet.addModule("processor.js?" + timestamp).then(() => {
-            this.scriptNode = new AudioWorkletNode(
+            this.audioWorkletNode = new AudioWorkletNode(
                 this.audioContext,
                 'sc68-worklet'
             );
 
             this.gainNode = this.audioContext.createGain();
 
-            this.scriptNode.connect(this.gainNode);
+            this.audioWorkletNode.connect(this.gainNode);
 
             // onmessage
-            this.scriptNode.port.onmessage = this.onmessage.bind(this);
+            this.audioWorkletNode.port.onmessage = this.onmessage.bind(this);
 
             this.gainNode.connect(this.analyzerNode);
             this.analyzerNode.connect(this.audioContext.destination);
@@ -125,7 +98,7 @@ export class NodePlayer {
                     })
                     .then(buffer => {
 
-                        this.scriptNode.port.postMessage({
+                        this.audioWorkletNode.port.postMessage({
                             type: 'registerFileData',
                             name: data.fullFilename,
                             payload: new Uint8Array(buffer)
@@ -172,7 +145,7 @@ export class NodePlayer {
 
         this.playgin = false;
 
-        var status = this.loadMusicData(data);
+        const status = this.loadMusicData(data);
 
         if (status < 0) {
             console.log('Failed in loadMusicData')
@@ -184,7 +157,7 @@ export class NodePlayer {
             // but trigger the file load
             this.setTrack(track)
 
-            this.scriptNode.port.postMessage({
+            this.audioWorkletNode.port.postMessage({
                 type: 'updateSongInfo'
             })
 
@@ -210,7 +183,7 @@ export class NodePlayer {
         if (this.audioContext.state === 'suspended') {
             this.audioContext.resume();
         }
-        this.scriptNode.port.postMessage({
+        this.audioWorkletNode.port.postMessage({
             type: 'play',
             options: options
         })
@@ -222,14 +195,14 @@ export class NodePlayer {
     * pause audio playback
     */
     pause() {
-        this.scriptNode.port.postMessage({
+        this.audioWorkletNode.port.postMessage({
             type: 'pause'
         })
         this.playing = false;
     }
 
     setTrack(track) {
-        this.scriptNode.port.postMessage({
+        this.audioWorkletNode.port.postMessage({
             type: 'setTrack',
             track: track
         })
@@ -319,7 +292,7 @@ export class NodePlayer {
 
     iOSHack(ctx) {
         try {
-            var source = ctx.createBufferSource();
+            let source = ctx.createBufferSource();
             if (!source.start) {
                 source.start = source.noteOn;
                 source.stop = source.noteOff;
@@ -337,9 +310,9 @@ export class NodePlayer {
 
         if (arrayBuffer) {
 
-            var data = new Uint8Array(arrayBuffer);
+            const data = new Uint8Array(arrayBuffer);
 
-            this.scriptNode.port.postMessage({
+            this.audioWorkletNode.port.postMessage({
                 type: 'loadMusicData',
                 sampleRate: this.sampleRate,
                 data: data,
