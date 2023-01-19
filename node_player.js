@@ -1,9 +1,10 @@
 /**
-* Generic ScriptProcessor based WebAudio music player (end user API).
+* Generic AudioWorkletProcessor based WebAudio music player (end user API).
 *
-* <p>Deals with the WebAudio node pipeline, feeds the sample data chunks delivered by
-* the backend into the WebAudio input buffers, provides basic file input facilities.
+* Original work by Juergen Wothke: https://bitbucket.org/wothke/webaudio-player/src/master/
 *
+* Terms of Use: This software is licensed under a CC BY-NC-SA
+* (http://creativecommons.org/licenses/by-nc-sa/4.0/).
 */
 export class NodePlayer {
 
@@ -57,10 +58,10 @@ export class NodePlayer {
 
         const timestamp = Date.now()
 
-        this.audioContext.audioWorklet.addModule("processor.js?" + timestamp).then(() => {
+        this.audioContext.audioWorklet.addModule("sc68_worklet_processor.js?" + timestamp).then(() => {
             this.audioWorkletNode = new AudioWorkletNode(
                 this.audioContext,
-                'sc68-worklet'
+                'sc68-worklet-processor'
             );
 
             this.gainNode = this.audioContext.createGain();
