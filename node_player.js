@@ -97,16 +97,19 @@ export class NodePlayer {
                 audioWorkletNode.port.onmessage = this.onmessage.bind(this);
                 audioWorkletNode.port.start()
 
+                const splitter = this.audioContext.createChannelSplitter(2);
+                audioWorkletNode.connect(splitter)
+
                 const analyzerNodes = []
-                // for (let i = 0; i < num_channels; ++i) {
-                //     const analyser = this.audioContext.createAnalyser();
-                //     audioWorkletNode.connect(analyser, i, 0)
-                //     analyzerNodes.push(analyser)
-                // }
+                for (let i = 0; i < 2 ; ++i) {
+                    const analyser = this.audioContext.createAnalyser();
+                    splitter.connect(analyser, i, 0)
+                    analyzerNodes.push(analyser)
+                }
 
                 this.audioRoutings[processorName] = {
                     'audioWorkletNode': audioWorkletNode,
-                    //'analyzerNodes': analyzerNodes
+                    'analyzerNodes': analyzerNodes
                 };
 
                 this.audioWorkletNode = audioWorkletNode;
@@ -119,7 +122,7 @@ export class NodePlayer {
                 this.pause()
                 // need to wait....
                 this.audioWorkletNode = this.audioRoutings[processorName]['audioWorkletNode'];
-                // this.analyzerNodes = this.audioRoutings[processorName]['analyzerNodes']
+                this.analyzerNodes = this.audioRoutings[processorName]['analyzerNodes']
             }
             this.processorName = processorName
         }
@@ -218,8 +221,7 @@ export class NodePlayer {
             this.setTrack(track)
 
             this.audioWorkletNode.port.postMessage({
-                type: 'updateSongInfo',
-                filename: fullFilename
+                type: 'updateSongInfo'
             })
 
             console.log('prepareTrackForPlayback succeded')
@@ -343,6 +345,13 @@ export class NodePlayer {
         //return this.backendAdapter.seekPlaybackPosition(pos);
     }
 
+    setStereoSeparation(stereoSeparation){
+        this.audioWorkletNode.port.postMessage({
+            type: 'setStereoSeparation',
+            stereoSeparation: stereoSeparation
+        })
+    }
+
 
     // ******* (music) file input related
 
@@ -411,8 +420,8 @@ export class NodePlayer {
         }
 
         const style = "rgb(43, 156, 212)",
-            edgeThreshold = 0,
-            pos = 0;
+            edgeThreshold = 0;
+
 
         this.analyzerNodes.forEach((analyzerNode, i) => {
 
@@ -448,7 +457,7 @@ export class NodePlayer {
                 const y = this.canvas.height - (((timeData[x] + 1) / 2) * this.canvas.height);
                 // this.canvasContext.moveTo(x - risingEdge + i * this.canvas.width, y-1);
                 // this.canvasContext.lineTo(x - risingEdge + i * this.canvas.width, y);
-                this.canvasContext.fillRect(x - risingEdge + pos * this.canvas.width / num_analysers, y, 1, 1);
+                this.canvasContext.fillRect(x - risingEdge + i * this.canvas.width / num_analysers, y, 1, 1);
             }
 
 
