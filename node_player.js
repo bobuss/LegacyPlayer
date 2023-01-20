@@ -11,6 +11,11 @@ export class NodePlayer {
 
     constructor(canvas) {
 
+        const audioWorkletSupport = !!AudioWorkletNode.toString().match(/native code/);
+        if (!audioWorkletSupport) {
+            alert('Browser not supporter. Needs AudioWorklet')
+        }
+
         this.spectrumEnabled = false
         this.canvas;
         this.canvasContext;
@@ -26,6 +31,7 @@ export class NodePlayer {
         // --------------- player status stuff ----------
 
         this.playing = false;
+        this.lasFullFilename;
         this.lastData;
         this.lastTrack;
 
@@ -58,10 +64,11 @@ export class NodePlayer {
 
         const timestamp = Date.now()
 
-        this.audioContext.audioWorklet.addModule("sc68_worklet_processor.js?" + timestamp).then(() => {
+        //this.audioContext.audioWorklet.addModule("sc68_worklet_processor.js?" + timestamp).then(() => {
+        this.audioContext.audioWorklet.addModule("openmpt_worklet_processor.js?" + timestamp).then(() => {
             this.audioWorkletNode = new AudioWorkletNode(
                 this.audioContext,
-                'sc68-worklet-processor'
+                'openmpt-worklet-processor'
             );
 
             this.gainNode = this.audioContext.createGain();
@@ -110,7 +117,7 @@ export class NodePlayer {
 
             case 'retryPrepareTrackForPlayback':
                 console.log('retry')
-                this.prepareTrackForPlayback(this.lastData, this.lastTrack)
+                this.prepareTrackForPlayback(this.lasFullFilename, this.lastData, this.lastTrack)
                 break;
 
             case 'onTrackEnd':
@@ -131,7 +138,7 @@ export class NodePlayer {
                 return response.arrayBuffer();
             })
             .then(buffer => {
-                return this.prepareTrackForPlayback(buffer, track)
+                return this.prepareTrackForPlayback(url, buffer, track)
             })
             .catch(error => {
                 // Handle/report error
@@ -139,14 +146,24 @@ export class NodePlayer {
 
     }
 
-    prepareTrackForPlayback(data, track) {
+    getPathAndFilename(filename) {
+        const sp = filename.split('/');
+        const fn = sp[sp.length - 1];
+        const path = filename.substring(0, filename.lastIndexOf("/"));
+        if (path.lenght) path = path + "/";
+
+        return [path, fn];
+    }
+
+    prepareTrackForPlayback(fullFilename, data, track) {
         // For retry
+        this.lasFullFilename = fullFilename
         this.lastData = data
         this.lastTrack = track
 
-        this.playgin = false;
+        this.playing = false;
 
-        const status = this.loadMusicData(data);
+        const status = this.loadMusicData(fullFilename, data);
 
         if (status < 0) {
             console.log('Failed in loadMusicData')
@@ -159,7 +176,8 @@ export class NodePlayer {
             this.setTrack(track)
 
             this.audioWorkletNode.port.postMessage({
-                type: 'updateSongInfo'
+                type: 'updateSongInfo',
+                filename: fullFilename
             })
 
             console.log('prepareTrackForPlayback succeded')
@@ -307,15 +325,18 @@ export class NodePlayer {
         } catch (ignore) { }
     }
 
-    loadMusicData(arrayBuffer, options) {
+    loadMusicData(fullFilename, arrayBuffer, options) {
 
         if (arrayBuffer) {
 
+            const pfn = this.getPathAndFilename(fullFilename);
             const data = new Uint8Array(arrayBuffer);
 
             this.audioWorkletNode.port.postMessage({
                 type: 'loadMusicData',
                 sampleRate: this.sampleRate,
+                path: pfn[1],
+                filename: pfn[1],
                 data: data,
                 options: options
             })

@@ -40,3 +40,8 @@ playButton.addEventListener('click', async (e) => {
 const canvas = document.getElementById('visualizer')
 player.enableSpectrum(canvas)
 ```
+
+
+## TODO
+- debug mode to turn off/on debug message and audioWorklet addModule timestamp
+- backend switch

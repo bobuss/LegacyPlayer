@@ -199,12 +199,6 @@ class AudioBackendAdapterBase {
     }
 
     /*
-    * Creates the URL used to retrieve the song file.
-    */
-    mapInternalFilename(overridePath, defaultPath, uri) {
-        return ((overridePath) ? overridePath : defaultPath) + uri;  // this.basePath ever needed?
-    }
-    /*
     * Allows to map the filenames used in the emulation to external URLs.
     */
     mapUrl(filename) {
@@ -407,14 +401,13 @@ class EmsHEAP16BackendAdapter extends AudioBackendAdapterBase {
     applyPanning(buffer, len, pan) {
         pan = pan * 256.0 / 2.0;
 
-        var i, l, r, m;
-        for (i = 0; i < len * 2; i += 2) {
-            l = this.Module.HEAP16[buffer + i];
-            r = this.Module.HEAP16[buffer + i + 1];
-            m = (r - l) * pan;
+        for (let i = 0; i < len * 2; i += 2) {
+            const l = this.Module.HEAP16[buffer + i];
+            const r = this.Module.HEAP16[buffer + i + 1];
+            let m = (r - l) * pan;
 
-            var nl = ((l << 8) + m) >> 8;
-            var nr = ((r << 8) - m) >> 8;
+            const nl = ((l << 8) + m) >> 8;
+            const nr = ((r << 8) - m) >> 8;
             this.Module.HEAP16[buffer + i] = nl;
             this.Module.HEAP16[buffer + i + 1] = nr;
         }
@@ -438,7 +431,7 @@ class SC68BackendAdapter extends EmsHEAP16BackendAdapter {
         this.worklet = null
     }
 
-    loadMusicData(sampleRate, data, options) {
+    loadMusicData(sampleRate, path, filename, data, options) {
         // load the song's binary data
         const buf = this.Module._malloc(data.length);
         this.Module.HEAPU8.set(data, buf);
@@ -463,10 +456,6 @@ class SC68BackendAdapter extends EmsHEAP16BackendAdapter {
     }
 
     evalTrackOptions(options) {
-        if (typeof options.timeout != 'undefined') {
-            // FIXME quite redundant - since sc68 also has a timeout.. (see above)
-            // ScriptNodePlayer.getInstance().setPlaybackTimeout(options.timeout * 1000);
-        }
         const track = options.track ? options.track : 0;	// frontend counts from 0
         this.currentTrack = track + 1;					// sc68 starts counting at 1
 
@@ -553,13 +542,14 @@ class SC68BackendAdapter extends EmsHEAP16BackendAdapter {
         return this.Module.ccall('emu_get_current_position', 'number');
     }
 
-    updateSongInfo() {
+    updateSongInfo(filename) {
         const numAttr = 7;
         const ret = this.Module.ccall('emu_get_track_info', 'number', ['number'], [this.currentTrack]);
 
         const array = this.Module.HEAP32.subarray(ret >> 2, (ret >> 2) + numAttr);
 
         this.songInfo.title = this.Module.UTF8ToString(array[0]);
+        if (!this.songInfo.title.length) this.songInfo.title = filename.replace(/^.*[\\\/]/, '');
         this.songInfo.author = this.Module.UTF8ToString(array[1]);
         this.songInfo.composer = this.Module.UTF8ToString(array[2]);
         this.songInfo.replay = this.Module.UTF8ToString(array[3]);
@@ -631,7 +621,7 @@ class SC68BackendAdapter extends EmsHEAP16BackendAdapter {
 
 const backendAdapter = new SC68BackendAdapter()
 
-var window = {
+const window = {
     fileRequestCallback: function (name) {
         return backendAdapter.fileRequestCallback(name)
     }
@@ -687,7 +677,7 @@ class SC68WorkletProcessor extends AudioWorkletProcessor {
         switch (data.type) {
 
             case 'loadMusicData':
-                this.isSongReady = (this.backendAdapter.loadMusicData(data.sampleRate, data.data, data.options) == 0)
+                this.isSongReady = (this.backendAdapter.loadMusicData(data.sampleRate, data.path, data.filename, data.data, data.options) == 0)
                 break;
 
             case 'evalTrackOptions':
@@ -695,7 +685,7 @@ class SC68WorkletProcessor extends AudioWorkletProcessor {
                 break;
 
             case 'updateSongInfo':
-                const songInfo = this.backendAdapter.updateSongInfo();
+                const songInfo = this.backendAdapter.updateSongInfo(data.filename);
                 this.port.postMessage({
                     type: 'songInfoUpdated',
                     songInfo: songInfo
@@ -735,10 +725,10 @@ class SC68WorkletProcessor extends AudioWorkletProcessor {
             o = 0;
 
         if (this.numberOfSamplesRendered + this.numberOfSamplesToRender > outSize) {
-            var availableSpace = outSize - this.numberOfSamplesRendered;
+            const availableSpace = outSize - this.numberOfSamplesRendered;
 
             for (let i = 0; i < availableSpace; i++) {
-                var ii = i + this.numberOfSamplesRendered;
+                const ii = i + this.numberOfSamplesRendered;
 
                 o = resampleBuffer[this.sourceBufferIdx++];
                 output1[ii] = o;
@@ -750,7 +740,7 @@ class SC68WorkletProcessor extends AudioWorkletProcessor {
         } else {
 
             for (let i = 0; i < this.numberOfSamplesToRender; i++) {
-                var ii = i + this.numberOfSamplesRendered;
+                const ii = i + this.numberOfSamplesRendered;
 
                 o = resampleBuffer[this.sourceBufferIdx++];
                 output1[ii] = o;
@@ -764,37 +754,36 @@ class SC68WorkletProcessor extends AudioWorkletProcessor {
     }
 
     copySamplesStereo(resampleBuffer, output1, output2, outSize) {
-        var i;
-        var s = 0, l = 0, r = 0;
-        var abs = Math.abs;
+        let s = 0;
+
         if (this.numberOfSamplesRendered + this.numberOfSamplesToRender > outSize) {
-            var availableSpace = outSize - this.numberOfSamplesRendered;
+            const availableSpace = outSize - this.numberOfSamplesRendered;
 
-            for (i = 0; i < availableSpace; i++) {
-                var ii = i + this.numberOfSamplesRendered;
+            for (let i = 0; i < availableSpace; i++) {
+                const ii = i + this.numberOfSamplesRendered;
 
-                l = resampleBuffer[this.sourceBufferIdx++];
-                r = resampleBuffer[this.sourceBufferIdx++];
+                const l = resampleBuffer[this.sourceBufferIdx++];
+                const r = resampleBuffer[this.sourceBufferIdx++];
 
                 output1[ii] = l;
                 output2[ii] = r;
 
-                s += abs(l) + abs(r);
+                s += Math.abs(l) + Math.abs(r);
             }
 
             this.numberOfSamplesToRender -= availableSpace;
             this.numberOfSamplesRendered = outSize;
         } else {
-            for (i = 0; i < this.numberOfSamplesToRender; i++) {
-                var ii = i + this.numberOfSamplesRendered;
+            for (let i = 0; i < this.numberOfSamplesToRender; i++) {
+                const ii = i + this.numberOfSamplesRendered;
 
-                l = resampleBuffer[this.sourceBufferIdx++];
-                r = resampleBuffer[this.sourceBufferIdx++];
+                const l = resampleBuffer[this.sourceBufferIdx++];
+                const r = resampleBuffer[this.sourceBufferIdx++];
 
                 output1[ii] = l;
                 output2[ii] = r;
 
-                s += abs(l) + abs(r);
+                s += Math.abs(l) + Math.abs(r);
             }
             this.numberOfSamplesRendered += this.numberOfSamplesToRender;
             this.numberOfSamplesToRender = 0;
@@ -825,13 +814,11 @@ class SC68WorkletProcessor extends AudioWorkletProcessor {
 
     process(inputs, outputs) {
 
-        var genStereo = this.isStereo() && outputs[0].numberOfChannels > 1;
+        const genStereo = this.isStereo() && outputs[0].numberOfChannels > 1;
 
-        var output1 = outputs[0][0];
-        var output2;
-        if (genStereo) {
-            output2 = outputs[0][1];
-        }
+        const output1 = outputs[0][0];
+        const output2 = outputs[0][1];
+
         if ((!this.isSongReady) || this.isPaused) {
             for (let i = 0; i < output1.length; i++) {
                 output1[i] = 0;
@@ -839,13 +826,13 @@ class SC68WorkletProcessor extends AudioWorkletProcessor {
             }
         } else {
 
-            var outSize = output1.length;
+            const outSize = output1.length;
 
             this.numberOfSamplesRendered = 0;
 
             while (this.numberOfSamplesRendered < outSize) {
                 if (this.numberOfSamplesToRender === 0) {
-                    var status;
+                    let status;
                     if ((this.currentTimeout > 0) && (this.currentPlaytime > this.currentTimeout)) {
                         console.log("'song end' forced after " + this.currentTimeout / this.correctSampleRate + " secs");
                         status = 1;
@@ -887,7 +874,7 @@ class SC68WorkletProcessor extends AudioWorkletProcessor {
                     this.sourceBufferIdx = 0;
                 }
 
-                var resampleBuffer = this.backendAdapter.getResampleBuffer();
+                const resampleBuffer = this.backendAdapter.getResampleBuffer();
 
                 if (genStereo) {
                     this.copySamplesStereo(resampleBuffer, output1, output2, outSize);
