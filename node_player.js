@@ -7,7 +7,8 @@
 * (http://creativecommons.org/licenses/by-nc-sa/4.0/).
 */
 
-const SUPPORTED_PROCESSORS = ['sc68', 'openmpt']
+const PROCESSORS_CHANNEL_COUNT = [ 'sc68', 'openmpt' ]
+
 
 export class NodePlayer {
 
@@ -26,9 +27,11 @@ export class NodePlayer {
         this.songInfo = {};
 
         // general WebAudio stuff
+        this.audioRoutings = {}
         this.gainNode;
-        this.analyzerNode;
-        this.audioWorkletNodes = {}
+
+        this.analyzerNodes = [];
+        this.audioWorklet;
         this.processorName;
 
         // --------------- player status stuff ----------
@@ -58,9 +61,10 @@ export class NodePlayer {
             this.iOSHack(this.audioContext);
         }
 
-        this.analyzerNode = this.audioContext.createAnalyser();
+        //this.analyzerNode = this.audioContext.createAnalyser();
 
         this.gainNode = this.audioContext.createGain();
+        this.gainNode.connect(this.audioContext.destination);
 
         // this.analyzerNode.fftSize = 256;// Math.pow(2, 11);
         // this.analyzerNode.minDecibels = -90;
@@ -72,29 +76,50 @@ export class NodePlayer {
     }
 
     async setWorkletProcessor(processorName) {
-        if (!processorName in SUPPORTED_PROCESSORS) {
+        if (!processorName in PROCESSORS_CHANNEL_COUNT) {
             console.log('Processor not supported')
             return false
         } else {
-            //this.processorName = processorName
-            if (this.audioWorkletNodes[processorName] === undefined) {
+
+            if (this.audioRoutings[processorName] === undefined) {
                 const timestamp = Date.now()
 
                 await this.audioContext.audioWorklet.addModule(processorName + "_worklet_processor.js?" + timestamp)
 
-                this.audioWorkletNodes[processorName] = new AudioWorkletNode(
+                const audioWorkletNode = new AudioWorkletNode(
                     this.audioContext,
-                    processorName + '-worklet-processor'
+                    processorName + '-worklet-processor',
+                    {
+                        numberOfOutputs: 1,
+                        outputChannelCount: [2]
+                    }
                 );
-                // onmessage
-                this.audioWorkletNodes[processorName].port.onmessage = this.onmessage.bind(this);
-                this.audioWorkletNodes[processorName].connect(this.gainNode);
-                this.gainNode.connect(this.analyzerNode);
-                this.analyzerNode.connect(this.audioContext.destination);
+                audioWorkletNode.port.onmessage = this.onmessage.bind(this);
+                audioWorkletNode.port.start()
+
+                const analyzerNodes = []
+                // for (let i = 0; i < num_channels; ++i) {
+                //     const analyser = this.audioContext.createAnalyser();
+                //     audioWorkletNode.connect(analyser, i, 0)
+                //     analyzerNodes.push(analyser)
+                // }
+
+                this.audioRoutings[processorName] = {
+                    'audioWorkletNode': audioWorkletNode,
+                    //'analyzerNodes': analyzerNodes
+                };
+
+                this.audioWorkletNode = audioWorkletNode;
+                this.analyzerNodes = analyzerNodes
+                this.audioWorkletNode.connect(this.gainNode)
+
                 console.log('registered ' + processorName + '-worklet-processor')
             } else {
                 // stop any playing on the current audioWorklet
                 this.pause()
+                // need to wait....
+                this.audioWorkletNode = this.audioRoutings[processorName]['audioWorkletNode'];
+                // this.analyzerNodes = this.audioRoutings[processorName]['analyzerNodes']
             }
             this.processorName = processorName
         }
@@ -121,7 +146,7 @@ export class NodePlayer {
                     })
                     .then(buffer => {
 
-                        this.audioWorkletNodes[this.processorName].port.postMessage({
+                        this.audioWorkletNode.port.postMessage({
                             type: 'registerFileData',
                             name: data.fullFilename,
                             payload: new Uint8Array(buffer)
@@ -192,7 +217,7 @@ export class NodePlayer {
             // but trigger the file load
             this.setTrack(track)
 
-            this.audioWorkletNodes[this.processorName].port.postMessage({
+            this.audioWorkletNode.port.postMessage({
                 type: 'updateSongInfo',
                 filename: fullFilename
             })
@@ -219,7 +244,7 @@ export class NodePlayer {
         if (this.audioContext.state === 'suspended') {
             this.audioContext.resume();
         }
-        this.audioWorkletNodes[this.processorName].port.postMessage({
+        this.audioWorkletNode.port.postMessage({
             type: 'play',
             options: options
         })
@@ -231,14 +256,14 @@ export class NodePlayer {
     * pause audio playback
     */
     pause() {
-        this.audioWorkletNodes[this.processorName].port.postMessage({
+        this.audioWorkletNode.port.postMessage({
             type: 'pause'
         })
         this.playing = false;
     }
 
     setTrack(track) {
-        this.audioWorkletNodes[this.processorName].port.postMessage({
+        this.audioWorkletNode.port.postMessage({
             type: 'setTrack',
             track: track
         })
@@ -349,7 +374,7 @@ export class NodePlayer {
             const pfn = this.getPathAndFilename(fullFilename);
             const data = new Uint8Array(arrayBuffer);
 
-            this.audioWorkletNodes[this.processorName].port.postMessage({
+            this.audioWorkletNode.port.postMessage({
                 type: 'loadMusicData',
                 sampleRate: this.sampleRate,
                 path: pfn[1],
@@ -378,9 +403,10 @@ export class NodePlayer {
     renderScope() {
 
         this.canvasContext.fillStyle = "transparent";
-        this.canvasContext.clearRect(0, 0, this.canvas.width * 4, this.canvas.height);
+        this.canvasContext.clearRect(0, 0, this.canvas.width, this.canvas.height);
+        const num_analysers = this.analyzerNodes.length
 
-        if (this.analyzerNode === undefined) {
+        if (num_analysers == 0) {
             return
         }
 
@@ -388,42 +414,46 @@ export class NodePlayer {
             edgeThreshold = 0,
             pos = 0;
 
+        this.analyzerNodes.forEach((analyzerNode, i) => {
+
+            const timeData = new Float32Array(analyzerNode.frequencyBinCount);
+            let risingEdge = 0;
+
+            analyzerNode.getFloatTimeDomainData(timeData);
+
+            this.canvasContext.fillStyle = "rgba(255,255,255,0.8)";
+            this.canvasContext.strokeStyle = style;
+            this.canvasContext.fillStyle = style;
+
+            // this.canvasContext.beginPath();
+
+            while (timeData[risingEdge] > 0 &&
+                risingEdge <= this.canvas.width / num_analysers &&
+                risingEdge < timeData.length) {
+                risingEdge++;
+            }
+
+            if (risingEdge >= this.canvas.width / num_analysers) { risingEdge = 0; }
 
 
-        const timeData = new Float32Array(this.analyzerNode.frequencyBinCount);
-        let risingEdge = 0;
+            while (timeData[risingEdge] < edgeThreshold &&
+                risingEdge <= this.canvas.width / num_analysers&&
+                risingEdge < timeData.length) {
+                risingEdge++;
+            }
 
-        this.analyzerNode.getFloatTimeDomainData(timeData);
+            if (risingEdge >= this.canvas.width / num_analysers) { risingEdge = 0; }
 
-        this.canvasContext.fillStyle = "rgba(255,255,255,0.8)";
-        this.canvasContext.strokeStyle = style;
-        this.canvasContext.fillStyle = style;
-
-        // this.canvasContext.beginPath();
-
-        while (timeData[risingEdge] > 0 &&
-            risingEdge <= this.canvas.width &&
-            risingEdge < timeData.length) {
-            risingEdge++;
-        }
-
-        if (risingEdge >= this.canvas.width) { risingEdge = 0; }
+            for (let x = risingEdge; x < timeData.length && x - risingEdge < this.canvas.width / num_analysers; x++) {
+                const y = this.canvas.height - (((timeData[x] + 1) / 2) * this.canvas.height);
+                // this.canvasContext.moveTo(x - risingEdge + i * this.canvas.width, y-1);
+                // this.canvasContext.lineTo(x - risingEdge + i * this.canvas.width, y);
+                this.canvasContext.fillRect(x - risingEdge + pos * this.canvas.width / num_analysers, y, 1, 1);
+            }
 
 
-        while (timeData[risingEdge] < edgeThreshold &&
-            risingEdge <= this.canvas.width &&
-            risingEdge < timeData.length) {
-            risingEdge++;
-        }
+        });
 
-        if (risingEdge >= this.canvas.width) { risingEdge = 0; }
-
-        for (let x = risingEdge; x < timeData.length && x - risingEdge < this.canvas.width; x++) {
-            const y = this.canvas.height - (((timeData[x] + 1) / 2) * this.canvas.height);
-            // this.canvasContext.moveTo(x - risingEdge + i * this.canvas.width, y-1);
-            // this.canvasContext.lineTo(x - risingEdge + i * this.canvas.width, y);
-            this.canvasContext.fillRect(x - risingEdge + pos * this.canvas.width, y, 1, 1);
-        }
     }
 }
 

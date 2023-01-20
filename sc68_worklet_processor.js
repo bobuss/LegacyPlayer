@@ -318,7 +318,7 @@ class AudioBackendAdapterBase {
     getCopiedAudio(input, len, funcReadFloat, resampleOutput) {
         // just copy the rescaled values so there is no need for special handling in playback loop
         for (let i = 0; i < len * this.channels; i++) {
-            resampleOutput[i] = funcReadFloat(input, i * 2);
+            resampleOutput[i] = funcReadFloat(input, i );
         }
         //console.log(resampleOutput)
         return len;
@@ -814,7 +814,7 @@ class SC68WorkletProcessor extends AudioWorkletProcessor {
 
     process(inputs, outputs) {
 
-        const genStereo = this.isStereo() && outputs[0].numberOfChannels > 1;
+        const genStereo = this.isStereo() && outputs[0].length > 1;
 
         const output1 = outputs[0][0];
         const output2 = outputs[0][1];

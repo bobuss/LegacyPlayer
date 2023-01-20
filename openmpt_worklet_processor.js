@@ -272,7 +272,7 @@ class AudioBackendAdapterBase {
     getCopiedAudio(input, len, funcReadFloat, resampleOutput) {
         // just copy the rescaled values so there is no need for special handling in playback loop
         for (let i = 0; i < len * this.channels; i++) {
-            resampleOutput[i] = funcReadFloat(input, i * 2);
+            resampleOutput[i] = funcReadFloat(input, i);
         }
         //console.log(resampleOutput)
         return len;
@@ -435,11 +435,7 @@ class MPTBackendAdapter extends EmsHEAP16BackendAdapter {
         if (pos < current) {
             // hack: for some reason backward seeking fails ('he: execution error') if "built-in"
             // file reload if used...
-            var ret = this.Module.ccall('emu_init', 'number'
-
-            ['string', 'string']
-
-            [this._currentPath, this._currentFile]);
+            var ret = this.Module.ccall('emu_init', 'number', ['string', 'string'], [this._currentPath, this._currentFile]);
         }
         var v = ScriptNodePlayer.getInstance().getVolume();
         ScriptNodePlayer.getInstance().setVolume(0);	// suppress any output while reset is in progress
@@ -645,7 +641,6 @@ class OpenMTPBackendAdapter extends AudioWorkletProcessor {
     }
 
     copySamplesMono(resampleBuffer, output1, outSize) {
-
         let s = 0,
             o = 0;
 
@@ -739,7 +734,7 @@ class OpenMTPBackendAdapter extends AudioWorkletProcessor {
 
     process(inputs, outputs) {
 
-        const genStereo = this.isStereo() && outputs[0].numberOfChannels > 1;
+        const genStereo = this.isStereo() && outputs[0].length > 1;
 
         const output1 = outputs[0][0];
         const output2 = outputs[0][1];
@@ -792,7 +787,7 @@ class OpenMTPBackendAdapter extends AudioWorkletProcessor {
                     this.sourceBufferLen = this.backendAdapter.getAudioBufferLength();
 
                     if (this.pan != null)
-                    this.backendAdapter.applyPanning(this.sourceBuffer, this.sourceBufferLen, this.pan + 1.0);
+                        this.backendAdapter.applyPanning(this.sourceBuffer, this.sourceBufferLen, this.pan + 1.0);
 
                     this.numberOfSamplesToRender = this.backendAdapter.getResampledAudio(this.sourceBuffer, this.sourceBufferLen);
 
@@ -806,6 +801,9 @@ class OpenMTPBackendAdapter extends AudioWorkletProcessor {
                 } else {
                     this.copySamplesMono(resampleBuffer, output1, outSize);
                 }
+                // console.log('---')
+                // console.log(output1)
+                // console.log(output2)
             }
             // keep track how long we are playing: just filled one WebAudio buffer which will be played at
             this.currentPlaytime += outSize * this.correctSampleRate / this.sampleRate;

@@ -43,4 +43,6 @@ player.enableSpectrum(canvas)
 
 
 ## TODO
+- seek
+- stereo?
 - debug mode to turn off/on debug message and audioWorklet addModule timestamp
