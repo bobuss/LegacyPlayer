@@ -16,10 +16,12 @@
     </header>
     <main>
 
-        <button id="load">LOAD</button>
+        <button id="loadmpt">LOAD MPT</button>
+        <button id="loadsc68">LOAD SC68</button>
         <button id="play">PLAY</button>
         <button id="stop">STOP</button>
         <button id="next">TRACK 4</button>
+        <button id="swap">SWAP</button>
 
         <canvas width="512" height="128" id="visualizer"></canvas>
 
@@ -34,8 +36,8 @@
     import { NodePlayer } from './node_player.js';
 
     //const songUrl = 'http://modland.com/pub/modules/SNDH/Jochen%20Hippel/wings%20of%20death.sndh'
-    const songUrl = 'http://modland.com/pub/modules/Protracker/Mantronix/coop-Tip/animotion.mod'
-    // 'http://modland.com/pub/modules/SNDH/Furax/virtual%20escape%20theme.sndh'
+    const songUrlMPT = 'http://modland.com/pub/modules/Ultratracker/Krystall/4th%20dimension.ult'
+    const songUrlSC68 = 'http://modland.com/pub/modules/SNDH/Furax/virtual%20escape%20theme.sndh'
     // 'https://modland.com/pub/modules/SC68/Tao/magnetic%20(sid%20emulator%20version).sc68'
 
     const player = new NodePlayer()
@@ -43,9 +45,14 @@
     const canvas = document.getElementById('visualizer')
     player.enableSpectrum(canvas)
 
-    const loadButton = document.getElementById('load');
-    loadButton.addEventListener('click', async (e) => {
-        await player.load(songUrl, 1);
+    const loadmptButton = document.getElementById('loadmpt');
+    loadmptButton.addEventListener('click', async (e) => {
+        await player.load(songUrlMPT, 'openmpt');
+    });
+
+    const loadsc68Button = document.getElementById('loadsc68');
+    loadsc68Button.addEventListener('click', async (e) => {
+        await player.load(songUrlSC68, 'sc68');
     });
 
     const playButton = document.getElementById('play');
@@ -62,6 +69,12 @@
     nextButton.addEventListener('click', async (e) => {
         player.setTrack(4)
     });
+
+    const swapButton = document.getElementById('swap');
+    swapButton.addEventListener('click', async (e) => {
+        player.setWorkletProcessor('sc68')
+    });
+
 
 
 </script>

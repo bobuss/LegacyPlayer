@@ -6,8 +6,10 @@
 * Terms of Use: This software is licensed under a CC BY-NC-SA
 * (http://creativecommons.org/licenses/by-nc-sa/4.0/).
 */
-export class NodePlayer {
 
+const SUPPORTED_PROCESSORS = ['sc68', 'openmpt']
+
+export class NodePlayer {
 
     constructor(canvas) {
 
@@ -26,7 +28,8 @@ export class NodePlayer {
         // general WebAudio stuff
         this.gainNode;
         this.analyzerNode;
-        this.audioWorkletNode;
+        this.audioWorkletNodes = {}
+        this.processorName;
 
         // --------------- player status stuff ----------
 
@@ -57,32 +60,44 @@ export class NodePlayer {
 
         this.analyzerNode = this.audioContext.createAnalyser();
 
+        this.gainNode = this.audioContext.createGain();
+
         // this.analyzerNode.fftSize = 256;// Math.pow(2, 11);
         // this.analyzerNode.minDecibels = -90;
         // this.analyzerNode.maxDecibels = -10;
         // this.analyzerNode.smoothingTimeConstant = 0.65;
 
-        const timestamp = Date.now()
+        return
 
-        //this.audioContext.audioWorklet.addModule("sc68_worklet_processor.js?" + timestamp).then(() => {
-        this.audioContext.audioWorklet.addModule("openmpt_worklet_processor.js?" + timestamp).then(() => {
-            this.audioWorkletNode = new AudioWorkletNode(
-                this.audioContext,
-                'openmpt-worklet-processor'
-            );
+    }
 
-            this.gainNode = this.audioContext.createGain();
+    async setWorkletProcessor(processorName) {
+        if (!processorName in SUPPORTED_PROCESSORS) {
+            console.log('Processor not supported')
+            return false
+        } else {
+            //this.processorName = processorName
+            if (this.audioWorkletNodes[processorName] === undefined) {
+                const timestamp = Date.now()
 
-            this.audioWorkletNode.connect(this.gainNode);
+                await this.audioContext.audioWorklet.addModule(processorName + "_worklet_processor.js?" + timestamp)
 
-            // onmessage
-            this.audioWorkletNode.port.onmessage = this.onmessage.bind(this);
-
-            this.gainNode.connect(this.analyzerNode);
-            this.analyzerNode.connect(this.audioContext.destination);
-
-        })
-
+                this.audioWorkletNodes[processorName] = new AudioWorkletNode(
+                    this.audioContext,
+                    processorName + '-worklet-processor'
+                );
+                // onmessage
+                this.audioWorkletNodes[processorName].port.onmessage = this.onmessage.bind(this);
+                this.audioWorkletNodes[processorName].connect(this.gainNode);
+                this.gainNode.connect(this.analyzerNode);
+                this.analyzerNode.connect(this.audioContext.destination);
+                console.log('registered ' + processorName + '-worklet-processor')
+            } else {
+                // stop any playing on the current audioWorklet
+                this.pause()
+            }
+            this.processorName = processorName
+        }
     }
 
 
@@ -106,7 +121,7 @@ export class NodePlayer {
                     })
                     .then(buffer => {
 
-                        this.audioWorkletNode.port.postMessage({
+                        this.audioWorkletNodes[this.processorName].port.postMessage({
                             type: 'registerFileData',
                             name: data.fullFilename,
                             payload: new Uint8Array(buffer)
@@ -128,7 +143,9 @@ export class NodePlayer {
     }
 
 
-    async load(url, track=1) {
+    async load(url, processorName, track = 1) {
+
+        await this.setWorkletProcessor(processorName)
 
         await fetch(url)
             .then(response => {
@@ -175,7 +192,7 @@ export class NodePlayer {
             // but trigger the file load
             this.setTrack(track)
 
-            this.audioWorkletNode.port.postMessage({
+            this.audioWorkletNodes[this.processorName].port.postMessage({
                 type: 'updateSongInfo',
                 filename: fullFilename
             })
@@ -202,7 +219,7 @@ export class NodePlayer {
         if (this.audioContext.state === 'suspended') {
             this.audioContext.resume();
         }
-        this.audioWorkletNode.port.postMessage({
+        this.audioWorkletNodes[this.processorName].port.postMessage({
             type: 'play',
             options: options
         })
@@ -214,14 +231,14 @@ export class NodePlayer {
     * pause audio playback
     */
     pause() {
-        this.audioWorkletNode.port.postMessage({
+        this.audioWorkletNodes[this.processorName].port.postMessage({
             type: 'pause'
         })
         this.playing = false;
     }
 
     setTrack(track) {
-        this.audioWorkletNode.port.postMessage({
+        this.audioWorkletNodes[this.processorName].port.postMessage({
             type: 'setTrack',
             track: track
         })
@@ -279,7 +296,7 @@ export class NodePlayer {
     * * TODO: use worklet
     */
     getMaxPlaybackPosition() {
-    //    return this.backendAdapter.getMaxPlaybackPosition();
+        //    return this.backendAdapter.getMaxPlaybackPosition();
     }
 
 
@@ -332,7 +349,7 @@ export class NodePlayer {
             const pfn = this.getPathAndFilename(fullFilename);
             const data = new Uint8Array(arrayBuffer);
 
-            this.audioWorkletNode.port.postMessage({
+            this.audioWorkletNodes[this.processorName].port.postMessage({
                 type: 'loadMusicData',
                 sampleRate: this.sampleRate,
                 path: pfn[1],
