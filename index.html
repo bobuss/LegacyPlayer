@@ -7,6 +7,58 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>node-player</title>
 
+    <style>
+        * {
+            font-family: Arial, Helvetica, sans-serif;
+        }
+
+        label {
+            color: black;
+            display: block;
+            width: 15em;
+            float: left;
+        }
+
+        label:after {
+            content: ": "
+        }
+
+        input {
+            padding: 3px;
+            box-shadow: 3px 3px 5px grey;
+            font-size: 14px;
+            font-weight: 600;
+            width: 30em;
+        }
+
+        button {
+            padding: 10px;
+            border: 1px solid gray;
+            background-color: #B4886B;
+            border-radius: 5px;
+            display: block;
+            margin-left: auto;
+            margin-right: auto;
+            width: 80px;
+            font: inherit;
+        }
+
+        button:focus {
+            outline: 2px solid gray;
+            font-weight: bold;
+            color: white;
+        }
+
+        button:hover {
+            background-color: orange;
+            box-shadow: 3px 3px 5px grey;
+            cursor: pointer;
+        }
+
+
+
+    </style>
+
 </head>
 
 <body>
@@ -16,17 +68,27 @@
     </header>
     <main>
 
+        <canvas width="512" height="128" id="visualizer"></canvas>
+
         <button id="loadmpt">LOAD MPT</button>
         <button id="loadsc68">LOAD SC68</button>
         <button id="play">PLAY</button>
         <button id="stop">STOP</button>
         <button id="next">TRACK 4</button>
         <button id="swap">SWAP</button>
+        <br/>
 
-        <input value="100" type="range" orient="horizontal" min="0" max="200" step="1" id="stereoSeparation" />
+        <span>
+            <label for="stereoSeparation">Stereo Separation</label>
+            <input value="100" type="range" orient="horizontal" min="0" max="200" step="1" id="stereoSeparation" />
+        </span>
 
-        <canvas width="512" height="128" id="visualizer"></canvas>
+        <br/>
 
+        <span>
+            <label for="panning">Panning</label>
+            <input value="0" type="range" orient="horizontal" min="-1" max="1" step="0.1" id="panning" />
+        </span>
     </main>
     <footer>
 
@@ -80,9 +142,15 @@
     });
 
     const stereoSeparationInput = document.getElementById('stereoSeparation');
-    stereoSeparationInput.addEventListener('change', async(e) => {
+    stereoSeparationInput.addEventListener('input', async(e) => {
         e.preventDefault();
         player.setStereoSeparation(e.target.value)
+    });
+
+    const panningInput = document.getElementById('panning');
+    panningInput.addEventListener('input', async(e) => {
+        e.preventDefault();
+        player.setPanning(e.target.value)
     });
 
 

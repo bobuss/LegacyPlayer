@@ -28,8 +28,9 @@ export class NodePlayer {
 
         // general WebAudio stuff
         this.audioRoutings = {}
-        this.gainNode;
 
+        this.gainNode
+        this.panNode
         this.analyzerNodes = [];
         this.audioWorklet;
         this.processorName;
@@ -61,15 +62,11 @@ export class NodePlayer {
             this.iOSHack(this.audioContext);
         }
 
-        //this.analyzerNode = this.audioContext.createAnalyser();
-
         this.gainNode = this.audioContext.createGain();
-        this.gainNode.connect(this.audioContext.destination);
+        this.panNode = this.audioContext.createStereoPanner();
 
-        // this.analyzerNode.fftSize = 256;// Math.pow(2, 11);
-        // this.analyzerNode.minDecibels = -90;
-        // this.analyzerNode.maxDecibels = -10;
-        // this.analyzerNode.smoothingTimeConstant = 0.65;
+        this.gainNode.connect(this.panNode)
+        this.panNode.connect(this.audioContext.destination);
 
         return
 
@@ -100,21 +97,26 @@ export class NodePlayer {
                 const splitter = this.audioContext.createChannelSplitter(2);
                 audioWorkletNode.connect(splitter)
 
+                const merger = this.audioContext.createChannelMerger(2);
+
                 const analyzerNodes = []
+
                 for (let i = 0; i < 2 ; ++i) {
                     const analyser = this.audioContext.createAnalyser();
                     splitter.connect(analyser, i, 0)
+                    analyser.connect(merger, 0, i)
                     analyzerNodes.push(analyser)
                 }
 
                 this.audioRoutings[processorName] = {
                     'audioWorkletNode': audioWorkletNode,
-                    'analyzerNodes': analyzerNodes
+                    'analyzerNodes': analyzerNodes,
                 };
 
                 this.audioWorkletNode = audioWorkletNode;
                 this.analyzerNodes = analyzerNodes
-                this.audioWorkletNode.connect(this.gainNode)
+
+                merger.connect(this.gainNode);
 
                 console.log('registered ' + processorName + '-worklet-processor')
             } else {
@@ -300,15 +302,6 @@ export class NodePlayer {
         this.onTrackEnd = onTrackEnd;
     }
 
-    /*
-    * is playback in stereo?
-    * TODO: use worklet
-    */
-    isStereo() {
-        //return this.backendAdapter.getChannels() == 2;
-    }
-
-
     /**
     * Get backend specific song infos like 'author', 'name', etc.
     */
@@ -350,6 +343,10 @@ export class NodePlayer {
             type: 'setStereoSeparation',
             stereoSeparation: stereoSeparation
         })
+    }
+
+    setPanning(panning) {
+        this.panNode.pan.setValueAtTime(panning, this.audioContext.currentTime);
     }
 
 
