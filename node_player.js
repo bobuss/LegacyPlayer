@@ -7,7 +7,7 @@
 * (http://creativecommons.org/licenses/by-nc-sa/4.0/).
 */
 
-const PROCESSORS_CHANNEL_COUNT = [ 'sc68', 'openmpt' ]
+const SUPPORTED_PROCESSORS = [ 'sc68', 'openmpt' ]
 
 
 export class NodePlayer {
@@ -64,7 +64,7 @@ export class NodePlayer {
 
 
     async loadWorkletProcessor(processorName) {
-        if (!processorName in PROCESSORS_CHANNEL_COUNT) {
+        if (!processorName in SUPPORTED_PROCESSORS) {
             console.log('Processor not supported')
             return false
         } else {
@@ -121,23 +121,22 @@ export class NodePlayer {
         }
         this.processorName = processorName
         this.merger.connect(this.gainNode);
-
     }
 
     get merger() {
-        if (this.processorName) {
+        if (SUPPORTED_PROCESSORS.indexOf(this.processorName) != -1 ) {
             return this.audioRoutings[this.processorName]['merger'];
         }
     }
 
     get audioWorkletNode() {
-        if (this.processorName) {
+        if (SUPPORTED_PROCESSORS.indexOf(this.processorName) != -1 ) {
             return this.audioRoutings[this.processorName]['audioWorkletNode'];
         }
     }
 
     get analyzerNodes() {
-        if (this.processorName) {
+        if (SUPPORTED_PROCESSORS.indexOf(this.processorName) != -1 ) {
             return this.audioRoutings[this.processorName]['analyzerNodes'];
         }
     }
@@ -255,7 +254,7 @@ export class NodePlayer {
     /*
     * start audio playback
     */
-    play(options) {
+    resume(options) {
         if (this.audioWorkletNode) {
             // on Safari macOS/iOS, the audioContext is suspended if it's not created
             // in the event handler of a user action: we attempt to resume it.
