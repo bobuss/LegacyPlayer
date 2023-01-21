@@ -10,8 +10,9 @@ Supported backends:
 Original work by by Juergen Wothke:
 - generic audio player: https://bitbucket.org/wothke/webaudio-player/src/master/
 - sc68 backend: https://bitbucket.org/wothke/sc68-2.2.1/src/master/
+  - emscripten worklet-compatible module from https://github.com/bobuss/sc68-2.2.1
 - openmpt backend: https://bitbucket.org/wothke/webmpt/src/master/
-
+  - emscripten worklet-compatible module built manually. Will push that on a repository, on day
 
 
 
@@ -22,15 +23,24 @@ import { NodePlayer } from './node_player.js';
 
 const songUrl = 'http://modland.com/pub/modules/SNDH/Jochen%20Hippel/wings%20of%20death.sndh'
 
-const player = new NodePlayer()
+const audioContext = new (window.AudioContext || window.webkitAudioContext)();
 
-await player.load(songUrl, 'sc68');
+const player = new NodePlayer(audioContext)
+await player.loadWorkletProcessor('sc68')
+await player.loadWorkletProcessor('openmpt')
 
-// play method can't be called directly, but needs an user interaction
-const playButton = document.getElementById('play');
-playButton.addEventListener('click', async (e) => {
+const loadmptButton = document.getElementById('loadmpt');
+loadmptButton.addEventListener('click', async (e) => {
+    await player.load(songUrlMPT, 'openmpt');
     player.play()
 });
+
+const loadsc68Button = document.getElementById('loadsc68');
+loadsc68Button.addEventListener('click', async (e) => {
+    await player.load(songUrlSC68, 'sc68');
+    player.play()
+});
+
 ```
 
 
@@ -44,5 +54,4 @@ player.enableSpectrum(canvas)
 
 ## TODO
 - seek
-- stereo?
 - debug mode to turn off/on debug message and audioWorklet addModule timestamp
