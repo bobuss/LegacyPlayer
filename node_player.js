@@ -12,51 +12,44 @@ const PROCESSORS_CHANNEL_COUNT = [ 'sc68', 'openmpt' ]
 
 export class NodePlayer {
 
-    constructor(canvas) {
+    spectrumEnabled = false
+    canvas;
+    canvasContext;
+
+    // container for song infos like: name, author, etc
+    songInfo = {};
+
+    // general WebAudio stuff
+    audioRoutings = {}
+
+    gainNode;
+    panNode;
+    audioWorklet;
+    processorName;
+
+    // --------------- player status stuff ----------
+
+    playing = false;
+    lasFullFilename;
+    lastData;
+    lastTrack;
+
+
+    constructor(audioContext) {
+
+        this.audioContext = audioContext
+        this.sampleRate = this.audioContext.sampleRate;
 
         const audioWorkletSupport = !!AudioWorkletNode.toString().match(/native code/);
         if (!audioWorkletSupport) {
             alert('Browser not supporter. Needs AudioWorklet')
         }
 
-        this.spectrumEnabled = false
-        this.canvas;
-        this.canvasContext;
-
-        // container for song infos like: name, author, etc
-        this.songInfo = {};
-
-        // general WebAudio stuff
-        this.audioRoutings = {}
-
-        this.gainNode
-        this.panNode
-        this.analyzerNodes = [];
-        this.audioWorklet;
-        this.processorName;
-
-        // --------------- player status stuff ----------
-
-        this.playing = false;
-        this.lasFullFilename;
-        this.lastData;
-        this.lastTrack;
-
         // hooks
         this.onPlayerReady = function () { console.log('onPlayerReady') }
         this.onTrackReadyToPlay = function () { console.log('onTrackReadyToPlay') }
         this.onTrackEnd = function () { console.log('onTrackEnd') }
 
-        this.createAudioContext()
-    }
-
-    createAudioContext() {
-
-        console.log('Creating audio context...');
-        this.audioContext = new (window.AudioContext || window.webkitAudioContext)();
-
-        this.sampleRate = this.audioContext.sampleRate;
-        this.correctSampleRate = this.sampleRate;
 
         if (this.isAppleShit()) {
             this.iOSHack(this.audioContext);
@@ -67,18 +60,17 @@ export class NodePlayer {
 
         this.gainNode.connect(this.panNode)
         this.panNode.connect(this.audioContext.destination);
-
-        return
-
     }
 
-    async setWorkletProcessor(processorName) {
+
+    async loadWorkletProcessor(processorName) {
         if (!processorName in PROCESSORS_CHANNEL_COUNT) {
             console.log('Processor not supported')
             return false
         } else {
 
             if (this.audioRoutings[processorName] === undefined) {
+
                 const timestamp = Date.now()
 
                 await this.audioContext.audioWorklet.addModule(processorName + "_worklet_processor.js?" + timestamp)
@@ -111,22 +103,42 @@ export class NodePlayer {
                 this.audioRoutings[processorName] = {
                     'audioWorkletNode': audioWorkletNode,
                     'analyzerNodes': analyzerNodes,
+                    'merger': merger
                 };
-
-                this.audioWorkletNode = audioWorkletNode;
-                this.analyzerNodes = analyzerNodes
-
-                merger.connect(this.gainNode);
 
                 console.log('registered ' + processorName + '-worklet-processor')
             } else {
-                // stop any playing on the current audioWorklet
-                this.pause()
-                // need to wait....
-                this.audioWorkletNode = this.audioRoutings[processorName]['audioWorkletNode'];
-                this.analyzerNodes = this.audioRoutings[processorName]['analyzerNodes']
+                console.log(processorName + '-worklet-processor already registered')
             }
-            this.processorName = processorName
+        }
+    }
+
+    selectWorkletProcessor(processorName) {
+        if (this.processorName) {
+            // stop and unplug the current worklet processor
+            this.pause()
+            this.merger.disconnect(this.gainNode);
+        }
+        this.processorName = processorName
+        this.merger.connect(this.gainNode);
+
+    }
+
+    get merger() {
+        if (this.processorName) {
+            return this.audioRoutings[this.processorName]['merger'];
+        }
+    }
+
+    get audioWorkletNode() {
+        if (this.processorName) {
+            return this.audioRoutings[this.processorName]['audioWorkletNode'];
+        }
+    }
+
+    get analyzerNodes() {
+        if (this.processorName) {
+            return this.audioRoutings[this.processorName]['analyzerNodes'];
         }
     }
 
@@ -175,7 +187,7 @@ export class NodePlayer {
 
     async load(url, processorName, track = 1) {
 
-        await this.setWorkletProcessor(processorName)
+        this.selectWorkletProcessor(processorName)
 
         await fetch(url)
             .then(response => {
@@ -193,6 +205,7 @@ export class NodePlayer {
 
     }
 
+
     getPathAndFilename(filename) {
         const sp = filename.split('/');
         const fn = sp[sp.length - 1];
@@ -201,6 +214,7 @@ export class NodePlayer {
 
         return [path, fn];
     }
+
 
     prepareTrackForPlayback(fullFilename, data, track) {
         // For retry
@@ -237,66 +251,71 @@ export class NodePlayer {
         return false;
     }
 
-    // ******* basic playback features
 
     /*
     * start audio playback
     */
     play(options) {
-        // on Safari macOS/iOS, the audioContext is suspended if it's not created
-        // in the event handler of a user action: we attempt to resume it.
-        if (this.audioContext.state === 'suspended') {
-            this.audioContext.resume();
+        if (this.audioWorkletNode) {
+            // on Safari macOS/iOS, the audioContext is suspended if it's not created
+            // in the event handler of a user action: we attempt to resume it.
+            if (this.audioContext.state === 'suspended') {
+                this.audioContext.resume();
+            }
+            this.audioWorkletNode.port.postMessage({
+                type: 'play',
+                options: options
+            })
+            this.playing = true;
+            this.render();
         }
-        this.audioWorkletNode.port.postMessage({
-            type: 'play',
-            options: options
-        })
-        this.playing = true;
-        this.render();
     }
 
     /*
     * pause audio playback
     */
     pause() {
-        this.audioWorkletNode.port.postMessage({
-            type: 'pause'
-        })
-        this.playing = false;
+        if (this.audioWorkletNode) {
+            this.audioWorkletNode.port.postMessage({
+                type: 'pause'
+            })
+            this.playing = false;
+        }
     }
 
+
     setTrack(track) {
-        this.audioWorkletNode.port.postMessage({
-            type: 'setTrack',
-            track: track
-        })
+        if (this.audioWorkletNode) {
+            this.audioWorkletNode.port.postMessage({
+                type: 'setTrack',
+                track: track
+            })
+        }
     }
+
 
     /*
     * set the playback volume (input between 0 and 1)
     */
     setVolume(value) {
-        if (typeof this.gainNode != 'undefined') {
-            this.gainNode.gain.value = value;
-        }
+        this.gainNode.gain.setValueAtTime(value, this.audioContext.currentTime);
     }
 
 
     getVolume() {
-        if (typeof this.gainNode != 'undefined') {
-            return this.gainNode.gain.value;
-        }
-        return -1;
+        return this.gainNode.gain.value;
     }
+
 
     setOnTrackEndOnPlayerReady(onTrackEndOnPlayerReady) {
         this.onTrackEndOnPlayerReady = onTrackEndOnPlayerReady
     }
 
+
     setOnTrackReadyToPlay(onTrackReadyToPlay) {
         this.onTrackReadyToPlay = onTrackReadyToPlay
     }
+
 
     setOnTrackEnd(onTrackEnd) {
         this.onTrackEnd = onTrackEnd;
@@ -339,10 +358,12 @@ export class NodePlayer {
     }
 
     setStereoSeparation(stereoSeparation){
-        this.audioWorkletNode.port.postMessage({
-            type: 'setStereoSeparation',
-            stereoSeparation: stereoSeparation
-        })
+        if (this.audioWorkletNode) {
+            this.audioWorkletNode.port.postMessage({
+                type: 'setStereoSeparation',
+                stereoSeparation: stereoSeparation
+            })
+        }
     }
 
     setPanning(panning) {
@@ -373,6 +394,7 @@ export class NodePlayer {
         } catch (ignore) { }
     }
 
+
     loadMusicData(fullFilename, arrayBuffer, options) {
 
         if (arrayBuffer) {
@@ -393,11 +415,13 @@ export class NodePlayer {
         }
     }
 
+
     enableSpectrum(canvas) {
         this.canvas = canvas;
         this.canvasContext = this.canvas.getContext('2d');
         this.spectrumEnabled = true
     }
+
 
     render() {
         if (this.playing && this.spectrumEnabled && this.canvasContext !== undefined) {
@@ -405,6 +429,7 @@ export class NodePlayer {
             requestAnimationFrame(this.render.bind(this));
         }
     }
+
 
     renderScope() {
 
