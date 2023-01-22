@@ -91,17 +91,29 @@ export class NodePlayer {
 
                 const merger = this.audioContext.createChannelMerger(2);
 
+                const channelGains = []
                 const analyzerNodes = []
 
                 for (let i = 0; i < 2 ; ++i) {
+                    const channelGain = this.audioContext.createGain();
                     const analyser = this.audioContext.createAnalyser();
-                    splitter.connect(analyser, i, 0)
+
+                    // analysers parameters to tweak
+                    analyser.minDecibels = -140;
+                    analyser.maxDecibels = 0;
+                    analyser.fftSize = 2048
+                    analyser.smoothingTimeConstant = 0.8;
+
+                    splitter.connect(channelGain, i, 0)
+                    channelGain.connect(analyser)
                     analyser.connect(merger, 0, i)
+                    channelGains.push(channelGain)
                     analyzerNodes.push(analyser)
                 }
 
                 this.audioRoutings[processorName] = {
                     'audioWorkletNode': audioWorkletNode,
+                    'channelGains': channelGains,
                     'analyzerNodes': analyzerNodes,
                     'merger': merger
                 };
@@ -134,6 +146,13 @@ export class NodePlayer {
             return this.audioRoutings[this.processorName]['audioWorkletNode'];
         }
     }
+
+    get channelGains() {
+        if (SUPPORTED_PROCESSORS.indexOf(this.processorName) != -1 ) {
+            return this.audioRoutings[this.processorName]['channelGains'];
+        }
+    }
+
 
     get analyzerNodes() {
         if (SUPPORTED_PROCESSORS.indexOf(this.processorName) != -1 ) {
@@ -208,7 +227,7 @@ export class NodePlayer {
     getPathAndFilename(filename) {
         const sp = filename.split('/');
         const fn = sp[sp.length - 1];
-        const path = filename.substring(0, filename.lastIndexOf("/"));
+        let path = filename.substring(0, filename.lastIndexOf("/"));
         if (path.lenght) path = path + "/";
 
         return [path, fn];
@@ -254,7 +273,7 @@ export class NodePlayer {
     /*
     * start audio playback
     */
-    resume(options) {
+    play(options) {
         if (this.audioWorkletNode) {
             // on Safari macOS/iOS, the audioContext is suspended if it's not created
             // in the event handler of a user action: we attempt to resume it.
@@ -271,9 +290,26 @@ export class NodePlayer {
     }
 
     /*
-    * pause audio playback
+    * pause / resume audio playback
     */
     pause() {
+        if (this.audioWorkletNode) {
+            if (this.playing) {
+                this.audioWorkletNode.port.postMessage({
+                    type: 'pause'
+                })
+                this.playing = false;
+            } else {
+                this.audioWorkletNode.port.postMessage({
+                    type: 'play'
+                })
+                this.playing = true;
+                this.render();
+            }
+        }
+    }
+
+    stop() {
         if (this.audioWorkletNode) {
             this.audioWorkletNode.port.postMessage({
                 type: 'pause'
@@ -365,8 +401,28 @@ export class NodePlayer {
         }
     }
 
+    /**
+    To get a better result, we also play on the gain nodes bound to each individual channel (left and right)
+    - panning goes from -1 (left) to 1 (right)
+    - as aresult:
+        - when the panning is [-1:0], the left gain goes from [0: 1]
+        - when the panning is [0:1], the right gain goes from [0: 1]
+    */
     setPanning(panning) {
+        panning = parseFloat(panning)
         this.panNode.pan.setValueAtTime(panning, this.audioContext.currentTime);
+        this.channelGains[0].gain.value = 1
+        this.channelGains[1].gain.value = 1
+
+        if (panning < 0) {
+            // left
+            this.channelGains[0].gain.setValueAtTime(panning + 1, this.audioContext.currentTime);
+        }
+        else if (panning > 0) {
+            // right
+            this.channelGains[1].gain.setValueAtTime(1 - panning, this.audioContext.currentTime);
+        }
+
     }
 
 
@@ -433,6 +489,7 @@ export class NodePlayer {
     renderScope() {
 
         this.canvasContext.fillStyle = "transparent";
+
         this.canvasContext.clearRect(0, 0, this.canvas.width, this.canvas.height);
         const num_analysers = this.analyzerNodes.length
 
@@ -444,42 +501,71 @@ export class NodePlayer {
             edgeThreshold = 0;
 
 
-        this.analyzerNodes.forEach((analyzerNode, i) => {
+        this.analyzerNodes.forEach((analyser, ai) => {
 
-            const timeData = new Float32Array(analyzerNode.frequencyBinCount);
-            let risingEdge = 0;
+            const freqs = new Uint8Array(analyser.frequencyBinCount);
+            const times = new Uint8Array(analyser.frequencyBinCount);
 
-            analyzerNode.getFloatTimeDomainData(timeData);
+            // Get the frequency data from the currently playing music
+            analyser.getByteFrequencyData(freqs);
+            analyser.getByteTimeDomainData(times);
 
-            this.canvasContext.fillStyle = "rgba(255,255,255,0.8)";
-            this.canvasContext.strokeStyle = style;
-            this.canvasContext.fillStyle = style;
+            const width = Math.floor(1/freqs.length, 10);
+            const ia = 1-ai;
 
-            // this.canvasContext.beginPath();
-
-            while (timeData[risingEdge] > 0 &&
-                risingEdge <= this.canvas.width / num_analysers &&
-                risingEdge < timeData.length) {
-                risingEdge++;
+             // Draw the frequency domain chart.
+            for (let i = 0; i < analyser.frequencyBinCount; i++) {
+                const value = freqs[i];
+                const percent = value / 256;
+                var height = this.canvas.height  * percent;
+                var offset = this.canvas.height - height - 1;
+                var barWidth = this.canvas.width / 2 / analyser.frequencyBinCount;
+                this.canvasContext.fillStyle = 'rgb(43, 156, 212)';
+                this.canvasContext.fillRect(i * barWidth + (this.canvas.width / 2 * ia), offset, barWidth, height);
             }
 
-            if (risingEdge >= this.canvas.width / num_analysers) { risingEdge = 0; }
-
-
-            while (timeData[risingEdge] < edgeThreshold &&
-                risingEdge <= this.canvas.width / num_analysers&&
-                risingEdge < timeData.length) {
-                risingEdge++;
+            // Draw the time domain chart.
+            for (let i = 0; i < analyser.frequencyBinCount; i++) {
+                const value = times[i];
+                const percent = value / 256;
+                const height = this.canvas.height * percent;
+                const offset = this.canvas.height - height - 1;
+                var barWidth = this.canvas.width / 2 / analyser.frequencyBinCount;
+                this.canvasContext.fillStyle = 'black';
+                this.canvasContext.fillRect(i * barWidth + (this.canvas.width / 2 * ia), offset, 1, 2);
             }
 
-            if (risingEdge >= this.canvas.width / num_analysers) { risingEdge = 0; }
 
-            for (let x = risingEdge; x < timeData.length && x - risingEdge < this.canvas.width / num_analysers; x++) {
-                const y = this.canvas.height - (((timeData[x] + 1) / 2) * this.canvas.height);
-                // this.canvasContext.moveTo(x - risingEdge + i * this.canvas.width, y-1);
-                // this.canvasContext.lineTo(x - risingEdge + i * this.canvas.width, y);
-                this.canvasContext.fillRect(x - risingEdge + i * this.canvas.width / num_analysers, y, 1, 1);
-            }
+            // let risingEdge = 0;
+
+            // analyzerNode.getFloatTimeDomainData(timeData);
+
+            // this.canvasContext.fillStyle = "rgba(255,255,255,0.8)";
+            // this.canvasContext.strokeStyle = style;
+            // this.canvasContext.fillStyle = style;
+
+            // while (timeData[risingEdge] > 0 && risingEdge <= this.canvas.width / num_analysers && risingEdge < timeData.length) {
+            //     risingEdge++;
+            // }
+
+            // if (risingEdge >= this.canvas.width / num_analysers) {
+            //     risingEdge = 0;
+            // }
+
+            // while (timeData[risingEdge] < edgeThreshold && risingEdge <= this.canvas.width / num_analysers && risingEdge < timeData.length) {
+            //     risingEdge++;
+            // }
+
+            // if (risingEdge >= this.canvas.width / num_analysers) {
+            //     risingEdge = 0;
+            // }
+
+            // for (let x = risingEdge; x < timeData.length && x - risingEdge < this.canvas.width / num_analysers; x++) {
+            //     const y = this.canvas.height - (((timeData[x] + 1) / 2) * this.canvas.height);
+            //     // this.canvasContext.moveTo(x - risingEdge + i * this.canvas.width, y-1);
+            //     // this.canvasContext.lineTo(x - risingEdge + i * this.canvas.width, y);
+            //     this.canvasContext.fillRect(x - risingEdge + i * this.canvas.width / num_analysers, y, 1, 1);
+            // }
 
 
         });

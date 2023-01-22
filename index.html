@@ -8,6 +8,7 @@
     <title>node-player</title>
 
     <style>
+
         * {
             font-family: Arial, Helvetica, sans-serif;
         }
@@ -34,13 +35,11 @@
         button {
             padding: 10px;
             border: 1px solid gray;
-            background-color: #B4886B;
             border-radius: 5px;
-            display: block;
             margin-left: auto;
             margin-right: auto;
-            width: 80px;
-            font: inherit;
+            width: 100px;
+
         }
 
         button:focus {
@@ -57,6 +56,7 @@
 
 
 
+
     </style>
 
 </head>
@@ -68,7 +68,8 @@
     </header>
     <main>
 
-        <canvas width="512" height="128" id="visualizer"></canvas>
+        <canvas width="512" height="300" id="visualizer"></canvas>
+        <br/>
 
         <button id="loadmpt">LOAD MPT</button>
         <button id="loadsc68">LOAD SC68</button>
@@ -100,12 +101,12 @@
     import { NodePlayer } from './node_player.js';
 
     //const songUrl = 'http://modland.com/pub/modules/SNDH/Jochen%20Hippel/wings%20of%20death.sndh'
-    //const songUrlMPT = 'http://modland.com/pub/modules/Fasttracker%202/Jugi/onward.xm'
-    const songUrlMPT = 'http://modland.com/pub/modules/Protracker/Jogeir%20Liljedahl/nearly%20there.mod'
+    const songUrlMPT = 'http://modland.com/pub/modules/Fasttracker%202/Jugi/onward.xm'
+    //const songUrlMPT = 'http://modland.com/pub/modules/Protracker/Jogeir%20Liljedahl/nearly%20there.mod'
     // const songUrlSC68 = 'http://modland.com/pub/modules/SNDH/Furax/virtual%20escape%20theme.sndh'
     const songUrlSC68 = 'http://modland.com/pub/modules/SC68/Jochen%20Hippel/wings%20of%20death%20-%20title.sc68'
     // 'https://modland.com/pub/modules/SC68/Tao/magnetic%20(sid%20emulator%20version).sc68'
-
+    //const songUrlMPT = 'http://modland.com/pub/modules/Fasttracker%202/Dubmood/dope.xm'
 
     const audioContext = new (window.AudioContext || window.webkitAudioContext)();
 
@@ -129,6 +130,7 @@
     const playButton = document.getElementById('play');
     playButton.addEventListener('click', async (e) => {
         player.play()
+        console.log(player.songInfo)
     });
 
     const stopButton = document.getElementById('stop');

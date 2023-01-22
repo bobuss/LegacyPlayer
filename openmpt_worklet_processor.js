@@ -35,33 +35,40 @@ const SAMPLES_PER_BUFFER = 8192;
 const OPENMPT_MODULE_RENDER_STEREOSEPARATION_PERCENT = 2
 const OPENMPT_MODULE_RENDER_INTERPOLATIONFILTER_LENGTH = 3
 
+
 class OpenMPTWorkletProcessor extends AudioWorkletProcessor {
+
+    filename = ''
+    channels = 2;
+    sampleRate = 44100;
+    inputSampleRate = 44100;
+    repeatCount = 0 // -1 forever, 0 once, n multiple
+    interpolationFilter = 0
+    stereoSeparation = 100; // from 0 (mono) to 200 (original full separation)
+
+    modulePtr = 0;
+    leftBufferPtr = 0;
+    rightBufferPtr = 0
+    resampleBuffer = new Float32Array();
+
+    // container for song infos like: name, author, etc
+    songInfo = {};
+
+    // --------------- player status stuff ----------
+    isPaused = true;          // 'end' of a song also triggers this state
+
+    // setup asyc completion of initialization
+    isSongReady = false;    // initialized (including file-loads that might have been necessary)
+
+
     constructor() {
         super();
         this.libopenmpt = libopenmpt()
-
-        this.filename = ''
-        this.channels = 2;
-        this.sampleRate = 44100;
-        this.inputSampleRate = 44100;
-        this.stereoSeparation = 100; // from 0 (mono) to 200 (original full separation)
-        this.resampleBuffer = new Float32Array();
-
         this.leftBufferPtr = this.libopenmpt._malloc(4 * SAMPLES_PER_BUFFER);
         this.rightBufferPtr = this.libopenmpt._malloc(4 * SAMPLES_PER_BUFFER);
 
-        // container for song infos like: name, author, etc
-        this.songInfo = {};
-
-        // --------------- player status stuff ----------
-        this.isPaused = true;          // 'end' of a song also triggers this state
-
-        // setup asyc completion of initialization
-        this.isSongReady = false;    // initialized (including file-loads that might have been necessary)
-
         // onmessage binding
         this.port.onmessage = this.onmessage.bind(this);
-
     }
 
     onmessage(e) {
@@ -109,21 +116,10 @@ class OpenMPTWorkletProcessor extends AudioWorkletProcessor {
                 this.setStereoSeparation(data.stereoSeparation)
                 break;
 
-        }
-    }
+            case 'seek':
+                this.seek(data.position)
+                break
 
-    cleanup() {
-        if (this.modulePtr != 0) {
-            this.libopenmpt._openmpt_module_destroy(this.modulePtr);
-            this.modulePtr = 0;
-        }
-        if (this.leftBufferPtr != 0) {
-            this.libopenmpt._free(this.leftBufferPtr);
-            this.leftBufferPtr = 0;
-        }
-        if (this.rightBufferPtr != 0) {
-            this.libopenmpt._free(this.rightBufferPtr);
-            this.rightBufferPtr = 0;
         }
     }
 
@@ -135,8 +131,10 @@ class OpenMPTWorkletProcessor extends AudioWorkletProcessor {
 
         this.libopenmpt.HEAPU8.set(byteArray, ptrToFile);
         this.modulePtr = this.libopenmpt._openmpt_module_create_from_memory(ptrToFile, byteArray.byteLength, 0, 0, 0);
+        this.libopenmpt._free(ptrToFile);
 
         if (this.modulePtr !== null) {
+            console.log('resetSampleRate')
             this.resetSampleRate(sampleRate, 44100);
             this._currentPath = path;
             this._currentFile = filename;
@@ -171,6 +169,14 @@ class OpenMPTWorkletProcessor extends AudioWorkletProcessor {
             this.libopenmpt._free(keyNameBuffer);
         }
 
+        const duration = this.libopenmpt._openmpt_module_get_duration_seconds(this.modulePtr)
+        data['duration'] = duration
+
+        const num_channels = this.libopenmpt._openmpt_module_get_num_channels(this.modulePtr)
+        data['num_channels'] = num_channels
+
+        const ctls = this.libopenmpt._openmpt_module_get_ctls(this.modulePtr)
+        //console.log(ctls)
         return data;
     }
 
@@ -178,6 +184,10 @@ class OpenMPTWorkletProcessor extends AudioWorkletProcessor {
         stereoSeparation = Math.max(0, stereoSeparation)
         stereoSeparation = Math.min(200, stereoSeparation)
         this.stereoSeparation = stereoSeparation
+    }
+
+    seek(position) {
+        return this.libopenmpt._openmpt_module_set_position_seconds(this.modulePtr, position);
     }
 
     process(inputs, outputs) {
@@ -199,8 +209,26 @@ class OpenMPTWorkletProcessor extends AudioWorkletProcessor {
             let framesRendered = 0;
             let ended = false;
             let error = false;
+
+
+            // repeat behavior
+            //
+            // -1: repeat forever
+            // 0: play once, repeat zero times (the default)
+            // n>0: play once and repeat n times after that
+            this.libopenmpt._openmpt_module_set_repeat_count(this.modulePtr, this.repeatCount);
+
+            // Stereo separation from 0 (mono) to 100 (full separation)
             this.libopenmpt._openmpt_module_set_render_param(this.modulePtr, OPENMPT_MODULE_RENDER_STEREOSEPARATION_PERCENT, this.stereoSeparation);
 
+            // interpolation filter
+            //
+            //   0: internal default
+            //   1: no interpolation (zero order hold)
+            //   2: linear interpolation
+            //   4: cubic interpolation
+            //   8: windowed sinc with 8 taps
+            this.libopenmpt._openmpt_module_set_render_param(this.modulePtr, OPENMPT_MODULE_RENDER_INTERPOLATIONFILTER_LENGTH, this.interpolationFilter);
 
             while (framesToRender > 0) {
                 let framesPerChunk = Math.min(framesToRender, SAMPLES_PER_BUFFER);
@@ -227,10 +255,10 @@ class OpenMPTWorkletProcessor extends AudioWorkletProcessor {
                 framesRendered += framesPerChunk;
             }
             if (ended) {
-                //this.disconnect();
-                this.cleanup();
-                //error ? processNode.player.fireEvent('onError', { type: 'openmpt' }) : processNode.player.fireEvent('onEnded');
-                this.isPaused = true;  // stop playback (or this will retrigger again and again before new song is started)
+                if (this.repeatCount == 0) {
+                    this.seek(0)
+                    this.isPaused = true;  // stop playback (or this will retrigger again and again before new song is started)
+                };
                 this.port.postMessage({
                     type: 'onTrackEnd'
                 });
