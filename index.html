@@ -68,7 +68,9 @@
     </header>
     <main>
 
-        <canvas width="512" height="300" id="visualizer"></canvas>
+        <canvas width="256" height="200" id="visualizer1"></canvas>
+        &nbsp;
+        <canvas width="256" height="200" id="visualizer2"></canvas>
         <br/>
 
         <button id="loadmpt">LOAD MPT</button>
@@ -99,10 +101,11 @@
 <script type="module">
 
     import { NodePlayer } from './node_player.js';
+    import { Scope } from './scope.js'
 
     //const songUrl = 'http://modland.com/pub/modules/SNDH/Jochen%20Hippel/wings%20of%20death.sndh'
-    const songUrlMPT = 'http://modland.com/pub/modules/Fasttracker%202/Jugi/onward.xm'
-    //const songUrlMPT = 'http://modland.com/pub/modules/Protracker/Jogeir%20Liljedahl/nearly%20there.mod'
+    //const songUrlMPT = 'http://modland.com/pub/modules/Fasttracker%202/Jugi/onward.xm'
+    const songUrlMPT = 'http://modland.com/pub/modules/Protracker/Jogeir%20Liljedahl/nearly%20there.mod'
     // const songUrlSC68 = 'http://modland.com/pub/modules/SNDH/Furax/virtual%20escape%20theme.sndh'
     const songUrlSC68 = 'http://modland.com/pub/modules/SC68/Jochen%20Hippel/wings%20of%20death%20-%20title.sc68'
     // 'https://modland.com/pub/modules/SC68/Tao/magnetic%20(sid%20emulator%20version).sc68'
@@ -111,11 +114,19 @@
     const audioContext = new (window.AudioContext || window.webkitAudioContext)();
 
     const player = new NodePlayer(audioContext)
+
+    const canvas1 = document.getElementById('visualizer1')
+    const scope1 = new Scope(canvas1)
+    player.addScopeToLeftChannel(scope1)
+
+    const canvas2 = document.getElementById('visualizer2')
+    const scope2 = new Scope(canvas2)
+    player.addScopeToRightChannel(scope2)
+
+    player.enableSpectrum()
+
     await player.loadWorkletProcessor('sc68')
     await player.loadWorkletProcessor('openmpt')
-
-    const canvas = document.getElementById('visualizer')
-    player.enableSpectrum(canvas)
 
     const loadmptButton = document.getElementById('loadmpt');
     loadmptButton.addEventListener('click', async (e) => {
