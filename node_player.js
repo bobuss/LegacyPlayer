@@ -57,6 +57,7 @@ export class NodePlayer {
         this.onPlayerReady = function () { console.log('onPlayerReady') }
         this.onTrackReadyToPlay = function () { console.log('onTrackReadyToPlay') }
         this.onTrackEnd = function () { console.log('onTrackEnd') }
+        this.onSongInfoUpdated = function () { console.log('onSongInfoUpdated') }
 
 
         if (this.isAppleShit()) {
@@ -162,6 +163,7 @@ export class NodePlayer {
 
             case 'songInfoUpdated':
                 this.songInfo = data.songInfo
+                this.onSongInfoUpdated()
                 break;
 
             case 'fileRequestCallback':
@@ -185,7 +187,6 @@ export class NodePlayer {
                 break;
 
             case 'retryPrepareTrackForPlayback':
-                console.log('retry')
                 this.prepareTrackForPlayback(this.lasFullFilename, this.lastData, this.lastTrack)
                 break;
 
@@ -293,11 +294,17 @@ export class NodePlayer {
                     type: 'pause'
                 })
                 this.playing = false;
-            } else {
+            }
+        }
+    }
+
+    resume() {
+        if (this.audioWorkletNode) {
+            if (!this.playing) {
                 this.audioWorkletNode.port.postMessage({
                     type: 'play'
                 })
-                this.playing = true;
+                this.playing = false;
                 this.render();
             }
         }
@@ -349,11 +356,8 @@ export class NodePlayer {
         this.onTrackEnd = onTrackEnd;
     }
 
-    /**
-    * Get backend specific song infos like 'author', 'name', etc.
-    */
-    getSongInfo() {
-        return this.songInfo;
+    setOnSongInfoUpdated(onSongInfoUpdated) {
+        this.onSongInfoUpdated = onSongInfoUpdated
     }
 
     // ******* song "position seek" related (if available with used backend)
