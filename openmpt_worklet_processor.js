@@ -259,6 +259,15 @@ class OpenMPTWorkletProcessor extends AudioWorkletProcessor {
                     this.seek(0)
                     this.isPaused = true;  // stop playback (or this will retrigger again and again before new song is started)
                 };
+                if (this.modulePtr != 0) {
+                    this.libopenmpt._openmpt_module_destroy(this.modulePtr);
+                }
+                if (this.leftBufferPtr != 0) {
+                    this.libopenmpt._free(this.leftBufferPtr);
+                }
+                if (this.rightBufferPtr != 0) {
+                    this.libopenmpt._free(this.rightBufferPtr);
+                }
                 this.port.postMessage({
                     type: 'onTrackEnd'
                 });

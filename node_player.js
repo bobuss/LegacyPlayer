@@ -250,7 +250,8 @@ export class NodePlayer {
             this.setTrack(track)
 
             this.audioWorkletNode.port.postMessage({
-                type: 'updateSongInfo'
+                type: 'updateSongInfo',
+                filename: fullFilename
             })
 
             console.log('prepareTrackForPlayback succeded')
@@ -389,11 +390,20 @@ export class NodePlayer {
         //return this.backendAdapter.seekPlaybackPosition(pos);
     }
 
-    setStereoSeparation(stereoSeparation){
+    setStereoSeparation(stereoSeparation) {
         if (this.audioWorkletNode) {
             this.audioWorkletNode.port.postMessage({
                 type: 'setStereoSeparation',
                 stereoSeparation: stereoSeparation
+            })
+        }
+    }
+
+    setRepeatCount(repeatCount) {
+        if (this.audioWorkletNode) {
+            this.audioWorkletNode.port.postMessage({
+                type: 'setRepeatCount',
+                repeatCount: repeatCount
             })
         }
     }
