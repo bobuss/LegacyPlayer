@@ -1312,7 +1312,8 @@ class AHXWorkletProcessor extends AudioWorkletProcessor {
         super();
 
         this.mixingBufferSize = Math.floor(this.sampleRate / 50);
-        this.MixingBuffer = new Array(this.mixingBufferSize);
+        this.mixingBufferL = new Array(this.mixingBufferSize);
+        this.mixingBufferR = new Array(this.mixingBufferSize);
 
         // onmessage binding
         this.port.onmessage = this.onmessage.bind(this);
@@ -1360,7 +1361,7 @@ class AHXWorkletProcessor extends AudioWorkletProcessor {
                 break;
 
             case 'setStereoSeparation':
-                //
+                this.setStereoSeparation(data.stereoSeparation)
                 break;
 
             case 'seek':
@@ -1389,39 +1390,55 @@ class AHXWorkletProcessor extends AudioWorkletProcessor {
 
     }
 
+    setStereoSeparation(stereoSeparation) {
+        stereoSeparation = Math.max(0, stereoSeparation)
+        stereoSeparation = Math.min(200, stereoSeparation)
+        this.stereoSeparation = stereoSeparation
+    }
 
-    MixChunk(NrSamples, mb) {
-        var dummy = 0;
-        for (let v = 0; v < 4; v++) {
-            if (this.Player.Voices[v].VoiceVolume == 0) continue;
-            var freq = 3579545.25 / this.Player.Voices[v].VoicePeriod; // #define Period2Freq(period) (3579545.25f / (period))
-            var delta = Math.floor(freq * (1 << 16) / this.sampleRate);
-            var samples_to_mix = NrSamples;
-            var mixpos = 0;
-            while (samples_to_mix) {
-                if (this.pos[v] >= (0x280 << 16)) this.pos[v] -= 0x280 << 16;
-                var thiscount = Math.min(samples_to_mix, Math.floor(((0x280 << 16) - this.pos[v] - 1) / delta) + 1);
 
-                samples_to_mix -= thiscount;
-                for (let i = 0; i < thiscount; i++) {
-                    this.MixingBuffer[mb + mixpos++] += this.Player.Voices[v].VoiceBuffer[this.pos[v] >> 16] * this.Player.Voices[v].VoiceVolume >> 6;
-                    this.pos[v] += delta;
-                }
-            } // while
-        } // v = 0-3
-        mb += NrSamples;
+    mixChannel(v, mixingBuffer, mb, nrSamples) {
+        if (this.Player.Voices[v].VoiceVolume == 0) return;
+        var freq = 3579545.25 / this.Player.Voices[v].VoicePeriod; // #define Period2Freq(period) (3579545.25f / (period))
+        var delta = Math.floor(freq * (1 << 16) / this.sampleRate);
+        var samples_to_mix = nrSamples;
+        var mixpos = 0;
+        while (samples_to_mix) {
+            if (this.pos[v] >= (0x280 << 16)) this.pos[v] -= 0x280 << 16;
+            var thiscount = Math.min(samples_to_mix, Math.floor(((0x280 << 16) - this.pos[v] - 1) / delta) + 1);
+
+            samples_to_mix -= thiscount;
+            for (let i = 0; i < thiscount; i++) {
+                mixingBuffer[mb + mixpos++] += this.Player.Voices[v].VoiceBuffer[this.pos[v] >> 16] * this.Player.Voices[v].VoiceVolume >> 6;
+                this.pos[v] += delta;
+            }
+        } // while
+    }
+
+
+    mixChunk(nrSamples, mb) {
+        // channels 0 & 3 goes to the left chan
+        this.mixChannel(0, this.mixingBufferL, mb, nrSamples)
+        this.mixChannel(3, this.mixingBufferL, mb, nrSamples)
+        // 1 & 2 to the right, just like on a real Amiga
+        this.mixChannel(1, this.mixingBufferR, mb, nrSamples)
+        this.mixChannel(2, this.mixingBufferR, mb, nrSamples)
+
+        mb += nrSamples;
         return mb;
     }
 
-    MixBuffer() { // Output: 1 amiga(50hz)-frame of audio data
-        for (let i = 0; i < this.mixingBufferSize; i++)
-            this.MixingBuffer[i] = 0;
+    mixBuffer() { // Output: 1 amiga(50hz)-frame of audio data
+        for (let i = 0; i < this.mixingBufferSize; i++) {
+            this.mixingBufferL[i] = 0;
+            this.mixingBufferR[i] = 0;
+        }
 
         let mb = 0;
-        const NrSamples = Math.floor(this.mixingBufferSize / this.Player.Song.SpeedMultiplier);
+        const nrSamples = Math.floor(this.mixingBufferSize / this.Player.Song.SpeedMultiplier);
         for (let f = 0; f < this.Player.Song.SpeedMultiplier; f++) {
             this.Player.PlayIRQ();
-            mb = this.MixChunk(NrSamples, mb);
+            mb = this.mixChunk(nrSamples, mb);
         } // frames
     }
 
@@ -1447,7 +1464,7 @@ class AHXWorkletProcessor extends AudioWorkletProcessor {
         } else {
             while(want > 0) {
                 if (this.bufferFull == 0) {
-                    this.MixBuffer();
+                    this.mixBuffer();
                     this.bufferFull = this.mixingBufferSize;
                     this.bufferOffset = 0;
                 }
@@ -1457,8 +1474,18 @@ class AHXWorkletProcessor extends AudioWorkletProcessor {
                 want -= can;
 
                 while (can-- > 0) {
-                    var thissample = this.MixingBuffer[this.bufferOffset++] / (128 * 4);
-                    outputL[out] = outputR[out] = thissample;
+                    var thissampleL = this.mixingBufferL[this.bufferOffset] / (128 * 4);
+                    var thissampleR = this.mixingBufferR[this.bufferOffset] / (128 * 4);
+
+                    // apply stero separation
+                    var finalSamplerL =  thissampleL + ( 1 - (this.stereoSeparation / 200)) * thissampleR
+                    var finalSamplerR =  thissampleR + ( 1 - (this.stereoSeparation / 200)) * thissampleL
+
+                    // copy to output buffers
+                    outputL[out] = finalSamplerL;
+                    outputR[out] = finalSamplerR;
+
+                    this.bufferOffset++
                     out++;
                 }
                 if (this.bufferOffset >= this.bufferFull) {
