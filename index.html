@@ -75,6 +75,7 @@
 
         <button id="loadmpt">LOAD MPT</button>
         <button id="loadsc68">LOAD SC68</button>
+        <button id="loadahx">LOAD AHX</button>
         <button id="play">PLAY</button>
         <button id="stop">STOP</button>
         <button id="next">TRACK 4</button>
@@ -110,6 +111,7 @@
     const songUrlSC68 = 'http://modland.com/pub/modules/SC68/Jochen%20Hippel/wings%20of%20death%20-%20title.sc68'
     // 'https://modland.com/pub/modules/SC68/Tao/magnetic%20(sid%20emulator%20version).sc68'
     //const songUrlMPT = 'http://modland.com/pub/modules/Fasttracker%202/Dubmood/dope.xm'
+    const songUrlAHX = 'http://modland.com/pub/modules/AHX/Filuu/axelf.ahx'
 
     const audioContext = new (window.AudioContext || window.webkitAudioContext)();
 
@@ -127,6 +129,7 @@
 
     await player.loadWorkletProcessor('sc68')
     await player.loadWorkletProcessor('openmpt')
+    await player.loadWorkletProcessor('ahx')
 
     const loadmptButton = document.getElementById('loadmpt');
     loadmptButton.addEventListener('click', async (e) => {
@@ -138,10 +141,14 @@
         await player.load(songUrlSC68, 'sc68');
     });
 
+    const loadAHXButton = document.getElementById('loadahx');
+    loadAHXButton.addEventListener('click', async (e) => {
+        await player.load(songUrlAHX, 'ahx');
+    });
+
     const playButton = document.getElementById('play');
     playButton.addEventListener('click', async (e) => {
         player.play()
-        console.log(player.songInfo)
     });
 
     const stopButton = document.getElementById('stop');

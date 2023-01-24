@@ -7,7 +7,7 @@
 * (http://creativecommons.org/licenses/by-nc-sa/4.0/).
 */
 
-const SUPPORTED_PROCESSORS = [ 'sc68', 'openmpt' ]
+const SUPPORTED_PROCESSORS = ['sc68', 'openmpt', 'ahx']
 
 
 export class NodePlayer {
@@ -131,7 +131,7 @@ export class NodePlayer {
 
                 this.processors[processorName] = audioWorkletNode,
 
-                console.log('registered ' + processorName + '-worklet-processor')
+                    console.log('registered ' + processorName + '-worklet-processor')
             } else {
                 console.log(processorName + '-worklet-processor already registered')
             }
@@ -139,7 +139,7 @@ export class NodePlayer {
     }
 
     selectWorkletProcessor(processorName) {
-        if (SUPPORTED_PROCESSORS.indexOf(this.processorName) != -1 && this.processorName in this.processors ) {
+        if (SUPPORTED_PROCESSORS.indexOf(this.processorName) != -1 && this.processorName in this.processors) {
             // stop and unplug the current worklet processor
             this.pause()
             this.audioWorkletNode.disconnect(this.splitter)
@@ -150,7 +150,7 @@ export class NodePlayer {
 
 
     get audioWorkletNode() {
-        if (SUPPORTED_PROCESSORS.indexOf(this.processorName) != -1 && this.processorName in this.processors ) {
+        if (SUPPORTED_PROCESSORS.indexOf(this.processorName) != -1 && this.processorName in this.processors) {
             return this.processors[this.processorName]
         }
     }
@@ -460,7 +460,6 @@ export class NodePlayer {
     loadMusicData(fullFilename, arrayBuffer, options) {
 
         if (arrayBuffer) {
-
             const pfn = this.getPathAndFilename(fullFilename);
             const data = new Uint8Array(arrayBuffer);
 
