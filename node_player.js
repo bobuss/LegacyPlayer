@@ -7,7 +7,7 @@
 * (http://creativecommons.org/licenses/by-nc-sa/4.0/).
 */
 
-const SUPPORTED_PROCESSORS = ['sc68', 'openmpt', 'ahx']
+const SUPPORTED_PROCESSORS = ['sc68', 'openmpt', 'ahx', 'pt']
 
 
 export class NodePlayer {
@@ -338,6 +338,7 @@ export class NodePlayer {
         this.mainGain.gain.setValueAtTime(value, this.audioContext.currentTime);
     }
 
+
     getVolume() {
         return this.mainGain.gain.value;
     }
@@ -356,6 +357,7 @@ export class NodePlayer {
     setOnTrackEnd(onTrackEnd) {
         this.onTrackEnd = onTrackEnd;
     }
+
 
     setOnSongInfoUpdated(onSongInfoUpdated) {
         this.onSongInfoUpdated = onSongInfoUpdated
@@ -500,7 +502,7 @@ export class NodePlayer {
     }
 
     render() {
-        if (this.playing && this.spectrumEnabled && this.scopes.length != 0) {
+        if (this.spectrumEnabled && this.scopes.length != 0) {
             this.scopes.forEach((scope) => {
                 scope.render();
             })

@@ -1492,7 +1492,6 @@ class AHXWorkletProcessor extends AudioWorkletProcessor {
                     this.bufferOffset = this.bufferFull = 0;
                 }
             }
-
         }
 
         return true

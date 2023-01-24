@@ -76,10 +76,11 @@
         <button id="loadmpt">LOAD MPT</button>
         <button id="loadsc68">LOAD SC68</button>
         <button id="loadahx">LOAD AHX</button>
+        <button id="loadpt">LOAD Protracker</button>
         <button id="play">PLAY</button>
         <button id="stop">STOP</button>
-        <button id="next">TRACK 4</button>
-        <button id="swap">SWAP</button>
+
+
         <br/>
 
         <span>
@@ -113,6 +114,9 @@
     //const songUrlMPT = 'http://modland.com/pub/modules/Fasttracker%202/Dubmood/dope.xm'
     const songUrlAHX = 'http://modland.com/pub/modules/AHX/AceMan/arrrr!ghwblwubwubwub.ahx'
 
+    const songUrlPT = 'http://modland.com/pub/modules/Protracker/Travolta/spacefunk.mod'
+
+
     const audioContext = new (window.AudioContext || window.webkitAudioContext)();
 
     const player = new NodePlayer(audioContext)
@@ -125,11 +129,13 @@
     const scope2 = new Scope(canvas2)
     player.addScopeToRightChannel(scope2)
 
-    player.enableSpectrum()
+    player.enableSpectrum();
+
 
     await player.loadWorkletProcessor('sc68')
     await player.loadWorkletProcessor('openmpt')
     await player.loadWorkletProcessor('ahx')
+    await player.loadWorkletProcessor('pt')
 
     const loadmptButton = document.getElementById('loadmpt');
     loadmptButton.addEventListener('click', async (e) => {
@@ -146,6 +152,11 @@
         await player.load(songUrlAHX, 'ahx');
     });
 
+    const loadPTButton = document.getElementById('loadpt');
+    loadPTButton.addEventListener('click', async (e) => {
+        await player.load(songUrlPT, 'pt')
+    });
+
     const playButton = document.getElementById('play');
     playButton.addEventListener('click', async (e) => {
         player.play()
@@ -154,16 +165,6 @@
     const stopButton = document.getElementById('stop');
     stopButton.addEventListener('click', async (e) => {
         player.pause()
-    });
-
-    const nextButton = document.getElementById('next');
-    nextButton.addEventListener('click', async (e) => {
-        player.setTrack(4)
-    });
-
-    const swapButton = document.getElementById('swap');
-    swapButton.addEventListener('click', async (e) => {
-        player.setWorkletProcessor('sc68')
     });
 
     const stereoSeparationInput = document.getElementById('stereoSeparation');
