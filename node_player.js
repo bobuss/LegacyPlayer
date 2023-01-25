@@ -52,6 +52,12 @@ export class NodePlayer {
     lastData;
     lastTrack;
 
+    // hooks
+    onPlayerReady = function () { console.log('onPlayerReady') }
+    onTrackReadyToPlay = function () { console.log('onTrackReadyToPlay') }
+    onTrackEnd = function () { console.log('onTrackEnd') }
+    onSongInfoUpdated = function () { console.log('onSongInfoUpdated') }
+
 
     constructor(audioContext) {
 
@@ -62,12 +68,6 @@ export class NodePlayer {
         if (!audioWorkletSupport) {
             alert('Browser not supporter. Needs AudioWorklet')
         }
-
-        // hooks
-        this.onPlayerReady = function () { console.log('onPlayerReady') }
-        this.onTrackReadyToPlay = function () { console.log('onTrackReadyToPlay') }
-        this.onTrackEnd = function () { console.log('onTrackEnd') }
-        this.onSongInfoUpdated = function () { console.log('onSongInfoUpdated') }
 
 
         if (this.isAppleShit()) {
@@ -80,9 +80,7 @@ export class NodePlayer {
         this.panNode = this.audioContext.createStereoPanner();
 
         // Split output in 2 branches for stero
-        //  - dedicated analyser
-        //  - dedicated volume
-        //
+        //  - dedicated volume left and right: so we can get a real panning
 
         // LEFT
         this.leftGain = this.audioContext.createGain();
@@ -365,26 +363,6 @@ export class NodePlayer {
 
     getVolume() {
         return this.mainGain.gain.value;
-    }
-
-
-    setOnTrackEndOnPlayerReady(onTrackEndOnPlayerReady) {
-        this.onTrackEndOnPlayerReady = onTrackEndOnPlayerReady
-    }
-
-
-    setOnTrackReadyToPlay(onTrackReadyToPlay) {
-        this.onTrackReadyToPlay = onTrackReadyToPlay
-    }
-
-
-    setOnTrackEnd(onTrackEnd) {
-        this.onTrackEnd = onTrackEnd;
-    }
-
-
-    setOnSongInfoUpdated(onSongInfoUpdated) {
-        this.onSongInfoUpdated = onSongInfoUpdated
     }
 
     // ******* song "position seek" related (if available with used backend)

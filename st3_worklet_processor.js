@@ -1180,7 +1180,12 @@ class ST3WorkletProcessor extends AudioWorkletProcessor {
             //    this.setfilter(this.player.filter);
             //}
 
-            if (this.endofsong && this.playing) this.stop();
+            if (this.endofsong && this.playing) {
+                this.isPaused = true;  // stop playback (or this will retrigger again and again before new song is started)
+                this.port.postMessage({
+                    type: 'onTrackEnd'
+                });
+            }
 
             if (this.delayfirst > 0) this.delayfirst--;
             this.delayload = 0;
