@@ -115,38 +115,38 @@ function Fasttracker() {
 
     // volume column effect jumptable for 0x50..0xef
     this.voleffects_t0 = new Array(
-        this.effect_vol_t0_f0,
-        this.effect_vol_t0_60, this.effect_vol_t0_70, this.effect_vol_t0_80, this.effect_vol_t0_90, this.effect_vol_t0_a0,
-        this.effect_vol_t0_b0, this.effect_vol_t0_c0, this.effect_vol_t0_d0, this.effect_vol_t0_e0
+        this.effect_vol_t0_f0.bind(this),
+        this.effect_vol_t0_60.bind(this), this.effect_vol_t0_70.bind(this), this.effect_vol_t0_80.bind(this), this.effect_vol_t0_90.bind(this), this.effect_vol_t0_a0.bind(this),
+        this.effect_vol_t0_b0.bind(this), this.effect_vol_t0_c0.bind(this), this.effect_vol_t0_d0.bind(this), this.effect_vol_t0_e0.bind(this)
     );
     this.voleffects_t1 = new Array(
-        this.effect_vol_t1_f0,
-        this.effect_vol_t1_60, this.effect_vol_t1_70, this.effect_vol_t1_80, this.effect_vol_t1_90, this.effect_vol_t1_a0,
-        this.effect_vol_t1_b0, this.effect_vol_t1_c0, this.effect_vol_t1_d0, this.effect_vol_t1_e0
+        this.effect_vol_t1_f0.bind(this),
+        this.effect_vol_t1_60.bind(this), this.effect_vol_t1_70.bind(this), this.effect_vol_t1_80.bind(this), this.effect_vol_t1_90.bind(this), this.effect_vol_t1_a0.bind(this),
+        this.effect_vol_t1_b0.bind(this), this.effect_vol_t1_c0.bind(this), this.effect_vol_t1_d0.bind(this), this.effect_vol_t1_e0.bind(this)
     );
 
     // effect jumptables for tick 0 and ticks 1..f
     this.effects_t0 = new Array(
-        this.effect_t0_0, this.effect_t0_1, this.effect_t0_2, this.effect_t0_3, this.effect_t0_4, this.effect_t0_5, this.effect_t0_6, this.effect_t0_7,
-        this.effect_t0_8, this.effect_t0_9, this.effect_t0_a, this.effect_t0_b, this.effect_t0_c, this.effect_t0_d, this.effect_t0_e, this.effect_t0_f,
-        this.effect_t0_g, this.effect_t0_h, this.effect_t0_i, this.effect_t0_j, this.effect_t0_k, this.effect_t0_l, this.effect_t0_m, this.effect_t0_n,
-        this.effect_t0_o, this.effect_t0_p, this.effect_t0_q, this.effect_t0_r, this.effect_t0_s, this.effect_t0_t, this.effect_t0_u, this.effect_t0_v,
-        this.effect_t0_w, this.effect_t0_x, this.effect_t0_y, this.effect_t0_z
+        this.effect_t0_0.bind(this), this.effect_t0_1.bind(this), this.effect_t0_2.bind(this), this.effect_t0_3.bind(this), this.effect_t0_4.bind(this), this.effect_t0_5.bind(this), this.effect_t0_6.bind(this), this.effect_t0_7.bind(this),
+        this.effect_t0_8.bind(this), this.effect_t0_9.bind(this), this.effect_t0_a.bind(this), this.effect_t0_b.bind(this), this.effect_t0_c.bind(this), this.effect_t0_d.bind(this), this.effect_t0_e.bind(this), this.effect_t0_f.bind(this),
+        this.effect_t0_g.bind(this), this.effect_t0_h.bind(this), this.effect_t0_i.bind(this), this.effect_t0_j.bind(this), this.effect_t0_k.bind(this), this.effect_t0_l.bind(this), this.effect_t0_m.bind(this), this.effect_t0_n.bind(this),
+        this.effect_t0_o.bind(this), this.effect_t0_p.bind(this), this.effect_t0_q.bind(this), this.effect_t0_r.bind(this), this.effect_t0_s.bind(this), this.effect_t0_t.bind(this), this.effect_t0_u.bind(this), this.effect_t0_v.bind(this),
+        this.effect_t0_w.bind(this), this.effect_t0_x.bind(this), this.effect_t0_y.bind(this), this.effect_t0_z.bind(this)
     );
     this.effects_t0_e = new Array(
-        this.effect_t0_e0, this.effect_t0_e1, this.effect_t0_e2, this.effect_t0_e3, this.effect_t0_e4, this.effect_t0_e5, this.effect_t0_e6, this.effect_t0_e7,
-        this.effect_t0_e8, this.effect_t0_e9, this.effect_t0_ea, this.effect_t0_eb, this.effect_t0_ec, this.effect_t0_ed, this.effect_t0_ee, this.effect_t0_ef
+        this.effect_t0_e0.bind(this), this.effect_t0_e1.bind(this), this.effect_t0_e2.bind(this), this.effect_t0_e3.bind(this), this.effect_t0_e4.bind(this), this.effect_t0_e5.bind(this), this.effect_t0_e6.bind(this), this.effect_t0_e7.bind(this),
+        this.effect_t0_e8.bind(this), this.effect_t0_e9.bind(this), this.effect_t0_ea.bind(this), this.effect_t0_eb.bind(this), this.effect_t0_ec.bind(this), this.effect_t0_ed.bind(this), this.effect_t0_ee.bind(this), this.effect_t0_ef.bind(this)
     );
     this.effects_t1 = new Array(
-        this.effect_t1_0, this.effect_t1_1, this.effect_t1_2, this.effect_t1_3, this.effect_t1_4, this.effect_t1_5, this.effect_t1_6, this.effect_t1_7,
-        this.effect_t1_8, this.effect_t1_9, this.effect_t1_a, this.effect_t1_b, this.effect_t1_c, this.effect_t1_d, this.effect_t1_e, this.effect_t1_f,
-        this.effect_t1_g, this.effect_t1_h, this.effect_t1_i, this.effect_t1_j, this.effect_t1_k, this.effect_t1_l, this.effect_t1_m, this.effect_t1_n,
-        this.effect_t1_o, this.effect_t1_p, this.effect_t1_q, this.effect_t1_r, this.effect_t1_s, this.effect_t1_t, this.effect_t1_u, this.effect_t1_v,
-        this.effect_t1_w, this.effect_t1_x, this.effect_t1_y, this.effect_t1_z
+        this.effect_t1_0.bind(this), this.effect_t1_1.bind(this), this.effect_t1_2.bind(this), this.effect_t1_3.bind(this), this.effect_t1_4.bind(this), this.effect_t1_5.bind(this), this.effect_t1_6.bind(this), this.effect_t1_7.bind(this),
+        this.effect_t1_8.bind(this), this.effect_t1_9.bind(this), this.effect_t1_a.bind(this), this.effect_t1_b.bind(this), this.effect_t1_c.bind(this), this.effect_t1_d.bind(this), this.effect_t1_e.bind(this), this.effect_t1_f.bind(this),
+        this.effect_t1_g.bind(this), this.effect_t1_h.bind(this), this.effect_t1_i.bind(this), this.effect_t1_j.bind(this), this.effect_t1_k.bind(this), this.effect_t1_l.bind(this), this.effect_t1_m.bind(this), this.effect_t1_n.bind(this),
+        this.effect_t1_o.bind(this), this.effect_t1_p.bind(this), this.effect_t1_q.bind(this), this.effect_t1_r.bind(this), this.effect_t1_s.bind(this), this.effect_t1_t.bind(this), this.effect_t1_u.bind(this), this.effect_t1_v.bind(this),
+        this.effect_t1_w.bind(this), this.effect_t1_x.bind(this), this.effect_t1_y.bind(this), this.effect_t1_z.bind(this)
     );
     this.effects_t1_e = new Array(
-        this.effect_t1_e0, this.effect_t1_e1, this.effect_t1_e2, this.effect_t1_e3, this.effect_t1_e4, this.effect_t1_e5, this.effect_t1_e6, this.effect_t1_e7,
-        this.effect_t1_e8, this.effect_t1_e9, this.effect_t1_ea, this.effect_t1_eb, this.effect_t1_ec, this.effect_t1_ed, this.effect_t1_ee, this.effect_t1_ef
+        this.effect_t1_e0.bind(this), this.effect_t1_e1.bind(this), this.effect_t1_e2.bind(this), this.effect_t1_e3.bind(this), this.effect_t1_e4.bind(this), this.effect_t1_e5.bind(this), this.effect_t1_e6.bind(this), this.effect_t1_e7.bind(this),
+        this.effect_t1_e8.bind(this), this.effect_t1_e9.bind(this), this.effect_t1_ea.bind(this), this.effect_t1_eb.bind(this), this.effect_t1_ec.bind(this), this.effect_t1_ed.bind(this), this.effect_t1_ee.bind(this), this.effect_t1_ef.bind(this)
     );
 }
 
@@ -581,6 +581,7 @@ Fasttracker.prototype.calcperiod = function (mod, note, finetune) {
 
 // advance player by a tick
 Fasttracker.prototype.advance = function (mod) {
+
     mod.stt = Math.floor((125.0 / mod.bpm) * (1 / 50.0) * mod.samplerate); // 50Hz
 
     // advance player

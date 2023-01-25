@@ -7,8 +7,18 @@
 * (http://creativecommons.org/licenses/by-nc-sa/4.0/).
 */
 
-const SUPPORTED_PROCESSORS = ['sc68', 'openmpt', 'ahx', 'pt']
+const SUPPORTED_PROCESSORS = ['sc68', 'openmpt', 'ahx', 'pt', 'ft2', 'st3']
 
+const FORMAT_PROCESSOR_MAPPING = {
+    'sc68': 'sc68',
+    'sndh': 'sc68',
+    's3m': 'st3',
+    'mod': 'pt',
+    'xm': 'ft2',
+    'ahx': 'ahx'
+
+
+}
 
 export class NodePlayer {
 
@@ -76,37 +86,40 @@ export class NodePlayer {
 
         // LEFT
         this.leftGain = this.audioContext.createGain();
-        this.leftAnalyser = this.createAnalyser();
         this.splitter.connect(this.leftGain, 0, 0);
-        this.leftGain.connect(this.leftAnalyser);
-        this.leftAnalyser.connect(this.merger, 0, 0);
+        this.leftGain.connect(this.merger, 0, 0);
 
         // RIGHT
         this.rightGain = this.audioContext.createGain();
-        this.rightAnalyser = this.createAnalyser();
         this.splitter.connect(this.rightGain, 1, 0);
-        this.rightGain.connect(this.rightAnalyser);
-        this.rightAnalyser.connect(this.merger, 0, 1);
+        this.rightGain.connect(this.merger, 0, 1);
 
         // Main routing to destinatino
-        this.mainAnalyser = this.createAnalyser()
-        this.merger.connect(this.mainAnalyser);
-        this.mainAnalyser.connect(this.mainGain)
+        this.merger.connect(this.mainGain);
         this.mainGain.connect(this.panNode)
         this.panNode.connect(this.audioContext.destination);
     }
 
-    createAnalyser() {
-        const analyser = this.audioContext.createAnalyser();
-        // analysers parameters to tweak, certainly not the right place
-        analyser.minDecibels = -140;
-        analyser.maxDecibels = 0;
-        analyser.fftSize = 128
-        analyser.smoothingTimeConstant = 0.8;
-        return analyser
+    get leftNode() {
+        return this.leftGain;
+    }
+
+    get rightNode() {
+        return this.rightGain
+    }
+
+    get masterNode() {
+        return this.mainGain
+    }
+
+    connect(gainNode, scope) {
+        const analyser = scope.createAnalyser(this.audioContext)
+        gainNode.connect(analyser)
+        this.scopes.push(scope)
     }
 
     async loadWorkletProcessor(processorName) {
+
         if (!processorName in SUPPORTED_PROCESSORS) {
             console.log('Processor not supported')
             return false
@@ -198,9 +211,20 @@ export class NodePlayer {
     }
 
 
-    async load(url, processorName, track = 1) {
+    async load(url, track = 1) {
 
-        this.selectWorkletProcessor(processorName)
+        let ext=url.split('.').pop().toLowerCase().trim();
+        if (FORMAT_PROCESSOR_MAPPING[ext] === undefined) {
+            // unknown extension, maybe amiga-style prefix?
+            ext=url.split('/').pop().split('.').shift().toLowerCase().trim();
+            if (FORMAT_PROCESSOR_MAPPING[ext] === undefined) {
+            // ok, give up
+            return false;
+            }
+        }
+        this.format=ext;
+
+        this.selectWorkletProcessor(FORMAT_PROCESSOR_MAPPING[ext])
 
         await fetch(url)
             .then(response => {

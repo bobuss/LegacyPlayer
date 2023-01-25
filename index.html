@@ -62,72 +62,71 @@
 </head>
 
 <body>
-    <header>
-        <h1>modern javascript implementation of node-player</h1>
 
-    </header>
     <main>
 
-        <canvas width="256" height="200" id="visualizer1"></canvas>
-        &nbsp;
-        <canvas width="256" height="200" id="visualizer2"></canvas>
-        <br/>
+        <div class="scopes">
+            <canvas width="256" height="200" id="visualizer1"></canvas>
+            &nbsp;
+            <canvas width="256" height="200" id="visualizer2"></canvas>
+        </div>
 
-        <button id="loadmpt">LOAD MPT</button>
-        <button id="loadsc68">LOAD SC68</button>
-        <button id="loadahx">LOAD AHX</button>
-        <button id="loadpt">LOAD Protracker</button>
-        <button id="play">PLAY</button>
-        <button id="stop">STOP</button>
+        <div class="loaders">
+            <button id="loadmpt">LOAD MPT</button>
+            <button id="loadsc68">LOAD SC68</button>
+            <button id="loadahx">LOAD AHX</button>
+            <button id="loadpt">LOAD PT</button>
+            <button id="loadft2">LOAD FT2</button>
+            <button id="loadst3">LOAD ST3</button>
+        </div>
 
 
-        <br/>
+        <div class="controls">
+            <button id="play">PLAY</button>
+            <button id="stop">STOP</button>
+        </div>
 
-        <span>
+
+        <div class="range">
             <label for="stereoSeparation">Stereo Separation</label>
             <input value="100" type="range" orient="horizontal" min="0" max="200" step="1" id="stereoSeparation" />
-        </span>
+        </div>
 
-        <br/>
 
-        <span>
+        <div class="range">
             <label for="panning">Panning</label>
             <input value="0" type="range" orient="horizontal" min="-1" max="1" step="0.1" id="panning" />
-        </span>
+        </div>
     </main>
-    <footer>
 
-    </footer>
 </body>
 
 <script type="module">
 
     import { NodePlayer } from './node_player.js';
-    import { Scope } from './scope.js'
+    import { Spectrum } from './visu_spectrum.js'
+    import { VuMeter } from './visu_vumeter.js'
 
-    //const songUrl = 'http://modland.com/pub/modules/SNDH/Jochen%20Hippel/wings%20of%20death.sndh'
-    //const songUrlMPT = 'http://modland.com/pub/modules/Fasttracker%202/Jugi/onward.xm'
-    const songUrlMPT = 'http://modland.com/pub/modules/Protracker/Jogeir%20Liljedahl/nearly%20there.mod'
-    // const songUrlSC68 = 'http://modland.com/pub/modules/SNDH/Furax/virtual%20escape%20theme.sndh'
+    const songUrlMPT = 'http://modland.com/pub/modules/Fasttracker%202/Jugi/onward.xm'
     const songUrlSC68 = 'http://modland.com/pub/modules/SC68/Jochen%20Hippel/wings%20of%20death%20-%20title.sc68'
-    // 'https://modland.com/pub/modules/SC68/Tao/magnetic%20(sid%20emulator%20version).sc68'
-    //const songUrlMPT = 'http://modland.com/pub/modules/Fasttracker%202/Dubmood/dope.xm'
     const songUrlAHX = 'http://modland.com/pub/modules/AHX/AceMan/arrrr!ghwblwubwubwub.ahx'
-
     const songUrlPT = 'http://modland.com/pub/modules/Protracker/Travolta/spacefunk.mod'
 
+    const songUrlFT2 = 'http://modland.com/pub/modules/Fasttracker%202/Jugi/dope.xm'
+
+    const songUrlST3 = 'http://modland.com/pub/modules/Screamtracker%203/Skaven/2nd%20reality.s3m'
 
     const audioContext = new (window.AudioContext || window.webkitAudioContext)();
 
     const player = new NodePlayer(audioContext)
 
     const canvas1 = document.getElementById('visualizer1')
-    const scope1 = new Scope(canvas1)
-    player.addScopeToLeftChannel(scope1)
+    const scope1 = new Spectrum(canvas1)
+    player.connect(player.leftNode, scope1)
 
     const canvas2 = document.getElementById('visualizer2')
-    const scope2 = new Scope(canvas2)
-    player.addScopeToRightChannel(scope2)
+    const scope2 = new VuMeter(canvas2)
+    player.connect(player.rightNode, scope2)
 
     player.enableSpectrum();
 
@@ -136,25 +135,37 @@
     await player.loadWorkletProcessor('openmpt')
     await player.loadWorkletProcessor('ahx')
     await player.loadWorkletProcessor('pt')
+    await player.loadWorkletProcessor('ft2')
+    await player.loadWorkletProcessor('st3')
 
     const loadmptButton = document.getElementById('loadmpt');
     loadmptButton.addEventListener('click', async (e) => {
-        await player.load(songUrlMPT, 'openmpt');
+        await player.load(songUrlMPT);
     });
 
     const loadsc68Button = document.getElementById('loadsc68');
     loadsc68Button.addEventListener('click', async (e) => {
-        await player.load(songUrlSC68, 'sc68');
+        await player.load(songUrlSC68);
     });
 
     const loadAHXButton = document.getElementById('loadahx');
     loadAHXButton.addEventListener('click', async (e) => {
-        await player.load(songUrlAHX, 'ahx');
+        await player.load(songUrlAHX);
     });
 
     const loadPTButton = document.getElementById('loadpt');
     loadPTButton.addEventListener('click', async (e) => {
-        await player.load(songUrlPT, 'pt')
+        await player.load(songUrlPT)
+    });
+
+    const loadFT2Button = document.getElementById('loadft2');
+    loadFT2Button.addEventListener('click', async (e) => {
+        await player.load(songUrlFT2)
+    });
+
+    const loadST3Button = document.getElementById('loadst3');
+    loadST3Button.addEventListener('click', async (e) => {
+        await player.load(songUrlST3)
     });
 
     const playButton = document.getElementById('play');

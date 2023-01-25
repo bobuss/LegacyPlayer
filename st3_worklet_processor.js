@@ -106,33 +106,33 @@ function Screamtracker()
   // effect jumptables for tick 0 and tick 1+
   this.effects_t0 = new Array(
     function(mod, ch) {}, // zero is ignored
-    this.effect_t0_a, this.effect_t0_b, this.effect_t0_c, this.effect_t0_d, this.effect_t0_e,
-    this.effect_t0_f, this.effect_t0_g, this.effect_t0_h, this.effect_t0_i, this.effect_t0_j,
-    this.effect_t0_k, this.effect_t0_l, this.effect_t0_m, this.effect_t0_n, this.effect_t0_o,
-    this.effect_t0_p, this.effect_t0_q, this.effect_t0_r, this.effect_t0_s, this.effect_t0_t,
-    this.effect_t0_u, this.effect_t0_v, this.effect_t0_w, this.effect_t0_x, this.effect_t0_y,
-    this.effect_t0_z
+    this.effect_t0_a.bind(this), this.effect_t0_b.bind(this), this.effect_t0_c.bind(this), this.effect_t0_d.bind(this), this.effect_t0_e.bind(this),
+    this.effect_t0_f.bind(this), this.effect_t0_g.bind(this), this.effect_t0_h.bind(this), this.effect_t0_i.bind(this), this.effect_t0_j.bind(this),
+    this.effect_t0_k.bind(this), this.effect_t0_l.bind(this), this.effect_t0_m.bind(this), this.effect_t0_n.bind(this), this.effect_t0_o.bind(this),
+    this.effect_t0_p.bind(this), this.effect_t0_q.bind(this), this.effect_t0_r.bind(this), this.effect_t0_s.bind(this), this.effect_t0_t.bind(this),
+    this.effect_t0_u.bind(this), this.effect_t0_v.bind(this), this.effect_t0_w.bind(this), this.effect_t0_x.bind(this), this.effect_t0_y.bind(this),
+    this.effect_t0_z.bind(this)
   );
   this.effects_t0_s = new Array(
-    this.effect_t0_s0, this.effect_t0_s1, this.effect_t0_s2, this.effect_t0_s3, this.effect_t0_s4,
-    this.effect_t0_s5, this.effect_t0_s6, this.effect_t0_s7, this.effect_t0_s8, this.effect_t0_s9,
-    this.effect_t0_sa, this.effect_t0_sb, this.effect_t0_sc, this.effect_t0_sd, this.effect_t0_se,
-    this.effect_t0_sf
+    this.effect_t0_s0.bind(this), this.effect_t0_s1.bind(this), this.effect_t0_s2.bind(this), this.effect_t0_s3.bind(this), this.effect_t0_s4.bind(this),
+    this.effect_t0_s5.bind(this), this.effect_t0_s6.bind(this), this.effect_t0_s7.bind(this), this.effect_t0_s8.bind(this), this.effect_t0_s9.bind(this),
+    this.effect_t0_sa.bind(this), this.effect_t0_sb.bind(this), this.effect_t0_sc.bind(this), this.effect_t0_sd.bind(this), this.effect_t0_se.bind(this),
+    this.effect_t0_sf.bind(this)
   );
   this.effects_t1 = new Array(
     function(mod, ch) {}, // zero is ignored
-    this.effect_t1_a, this.effect_t1_b, this.effect_t1_c, this.effect_t1_d, this.effect_t1_e,
-    this.effect_t1_f, this.effect_t1_g, this.effect_t1_h, this.effect_t1_i, this.effect_t1_j,
-    this.effect_t1_k, this.effect_t1_l, this.effect_t1_m, this.effect_t1_n, this.effect_t1_o,
-    this.effect_t1_p, this.effect_t1_q, this.effect_t1_r, this.effect_t1_s, this.effect_t1_t,
-    this.effect_t1_u, this.effect_t1_v, this.effect_t1_w, this.effect_t1_x, this.effect_t1_y,
-    this.effect_t1_z
+    this.effect_t1_a.bind(this), this.effect_t1_b.bind(this), this.effect_t1_c.bind(this), this.effect_t1_d.bind(this), this.effect_t1_e.bind(this),
+    this.effect_t1_f.bind(this), this.effect_t1_g.bind(this), this.effect_t1_h.bind(this), this.effect_t1_i.bind(this), this.effect_t1_j.bind(this),
+    this.effect_t1_k.bind(this), this.effect_t1_l.bind(this), this.effect_t1_m.bind(this), this.effect_t1_n.bind(this), this.effect_t1_o.bind(this),
+    this.effect_t1_p.bind(this), this.effect_t1_q.bind(this), this.effect_t1_r.bind(this), this.effect_t1_s.bind(this), this.effect_t1_t.bind(this),
+    this.effect_t1_u.bind(this), this.effect_t1_v.bind(this), this.effect_t1_w.bind(this), this.effect_t1_x.bind(this), this.effect_t1_y.bind(this),
+    this.effect_t1_z.bind(this)
   );
   this.effects_t1_s = new Array(
-    this.effect_t1_s0, this.effect_t1_s1, this.effect_t1_s2, this.effect_t1_s3, this.effect_t1_s4,
-    this.effect_t1_s5, this.effect_t1_s6, this.effect_t1_s7, this.effect_t1_s8, this.effect_t1_s9,
-    this.effect_t1_sa, this.effect_t1_sb, this.effect_t1_sc, this.effect_t1_sd, this.effect_t1_se,
-    this.effect_t1_sf
+    this.effect_t1_s0.bind(this), this.effect_t1_s1.bind(this), this.effect_t1_s2.bind(this), this.effect_t1_s3.bind(this), this.effect_t1_s4.bind(this),
+    this.effect_t1_s5.bind(this), this.effect_t1_s6.bind(this), this.effect_t1_s7.bind(this), this.effect_t1_s8.bind(this), this.effect_t1_s9.bind(this),
+    this.effect_t1_sa.bind(this), this.effect_t1_sb.bind(this), this.effect_t1_sc.bind(this), this.effect_t1_sd.bind(this), this.effect_t1_se.bind(this),
+    this.effect_t1_sf.bind(this)
   );
 }
 
