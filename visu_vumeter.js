@@ -3,8 +3,8 @@ import { VisuBase } from './visu_base.js'
 export class VuMeter extends VisuBase {
 
 
-    vuWidth = 500;
-    vuHeight = 6;
+    width = 500;
+    height = 6;
     dotWidth = 10;
     margin = 2;
     middleMargin = 4;
@@ -13,8 +13,6 @@ export class VuMeter extends VisuBase {
 
     constructor(canvas) {
         super(canvas)
-        this.canvas.width = this.vuWidth;
-        this.canvas.height = this.vuHeight;
 
         this.gradient = this.canvasCtx.createLinearGradient(0, 0, this.canvas.width, 0);
         this.gradient.addColorStop(0, "green");
@@ -38,11 +36,11 @@ export class VuMeter extends VisuBase {
 
             this.canvasCtx.clearRect(0, 0, this.canvas.width, this.canvas.height);
 
-            const intensity = Math.min(Math.floor(range * this.vuWidth), this.vuWidth);
+            const intensity = Math.min(Math.floor(range * this.width), this.width);
 
             this.canvasCtx.fillStyle = this.gradient;
             if (intensity)
-                this.canvasCtx.fillRect(0, 0, intensity, this.vuHeight, 0, 0, intensity, this.vuHeight);
+                this.canvasCtx.fillRect(0, 0, intensity, this.height, 0, 0, intensity, this.height);
         }
 
     }

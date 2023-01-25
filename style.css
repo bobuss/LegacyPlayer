@@ -1,0 +1,101 @@
+body {
+    font-family: Arial, sans-serif;
+    margin: 0;
+    padding: 0;
+    display: flex;
+    min-height: 100vh;
+    flex-direction: column;
+}
+
+header {
+    background-color: #333;
+    color: #fff;
+    padding: 1em;
+}
+
+header nav ul {
+    list-style: none;
+    margin: 0;
+    padding: 0;
+    display: flex;
+}
+
+header nav ul li {
+    margin-right: 1em;
+}
+
+header nav ul li a {
+    color: #fff;
+    text-decoration: none;
+}
+
+main {
+    flex: 1;
+    padding: 2em;
+}
+
+main h1 {
+    text-align: center;
+}
+
+footer {
+    background-color: #333;
+    color: #fff;
+    padding: 1em;
+    text-align: center;
+}
+
+
+label {
+    color: black;
+    display: block;
+    width: 15em;
+    float: left;
+}
+
+label:after {
+    content: ": "
+}
+
+input {
+    padding: 3px;
+    box-shadow: 3px 3px 5px grey;
+    font-size: 14px;
+    font-weight: 600;
+    width: 30em;
+}
+
+button {
+    padding: 10px;
+    border: 1px solid gray;
+    border-radius: 5px;
+    margin-left: auto;
+    margin-right: auto;
+    width: 100px;
+
+}
+
+button:focus {
+    outline: 2px solid gray;
+    font-weight: bold;
+    color: white;
+}
+
+button:hover {
+    background-color: orange;
+    box-shadow: 3px 3px 5px grey;
+    cursor: pointer;
+}
+
+
+.displays {
+    display: block;
+    height: 300px;
+    width: 800px;
+}
+
+canvas {
+    margin: auto;
+    display: block;
+    border: solid 1px black
+}

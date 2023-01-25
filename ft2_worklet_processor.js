@@ -1467,7 +1467,7 @@ class FT2WorkletProcessor extends AudioWorkletProcessor {
 
     loadMusicData(sampleRate, path, filename, data, options) {
         this.filename = filename
-
+        this.player.clearsong();
         if (this.player.parse(data)) {
             // copy static data from player
             this.songInfo = {
