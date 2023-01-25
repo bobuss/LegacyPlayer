@@ -1,6 +1,11 @@
 export class VisuBase{
 
     analyser = null;
+    minDecibels = -90;
+    maxDecibels = -10;
+    fftSize = 128
+    smoothingTimeConstant = 0.85;
+
 
     constructor(canvas) {
         this.canvas = canvas;
@@ -10,10 +15,10 @@ export class VisuBase{
     // Can be overridden if needed in subclasses
     createAnalyser(audioCtx) {
         this.analyser = audioCtx.createAnalyser();
-        this.analyser.minDecibels = -90;
-        this.analyser.maxDecibels = -10;
-        this.analyser.fftSize = 128
-        this.analyser.smoothingTimeConstant = 0.85;
+        this.analyser.minDecibels = this.minDecibels
+        this.analyser.maxDecibels = this.maxDecibels
+        this.analyser.fftSize = this.fftSize
+        this.analyser.smoothingTimeConstant = this.smoothingTimeConstant
         return this.analyser
     }
 

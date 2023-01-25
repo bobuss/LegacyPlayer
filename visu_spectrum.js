@@ -3,6 +3,10 @@ import { VisuBase } from './visu_base.js'
 
 export class Spectrum extends VisuBase{
 
+    fftSize = 256
+    minDecibels = -90;
+    maxDecibels = -10;
+
     render() {
 
         if ( this.analyser ) {
@@ -22,7 +26,7 @@ export class Spectrum extends VisuBase{
             for (let i = 0; i < bufferLength; i++) {
                 barHeight = dataArray[i];
                 this.canvasCtx.fillStyle = gradient;
-                this.canvasCtx.fillRect(x, this.canvas.height - barHeight, barWidth - 2, barHeight);
+                this.canvasCtx.fillRect(x, this.canvas.height - barHeight, barWidth - 1, barHeight);
                 x += barWidth;
             }
 
