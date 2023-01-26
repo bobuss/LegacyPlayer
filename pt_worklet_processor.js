@@ -766,6 +766,7 @@ class PTWorkletProcessor extends AudioWorkletProcessor {
     isSongReady = false;
     mixval = 8.0;
     chvu = new Float32Array(32);
+    publishChannelVU = true
 
     // container for song infos like: name, author, etc
     songInfo = {};
@@ -918,6 +919,13 @@ class PTWorkletProcessor extends AudioWorkletProcessor {
             for (var i = 0; i < this.player.channels; i++) {
                 this.chvu[i] = this.chvu[i] * 0.25 + this.player.chvu[i] * 0.75;
                 this.player.chvu[i] = 0.0;
+            }
+
+            if (this.publishChannelVU) {
+                this.port.postMessage({
+                    type: 'chvu',
+                    chvu: this.chvu
+                });
             }
 
         }

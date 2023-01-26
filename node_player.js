@@ -6,8 +6,9 @@
 * Terms of Use: This software is licensed under a CC BY-NC-SA
 * (http://creativecommons.org/licenses/by-nc-sa/4.0/).
 */
+import lottieWeb from 'https://cdn.skypack.dev/lottie-web';
 
-const SUPPORTED_PROCESSORS = ['sc68', 'openmpt', 'ahx', 'pt', 'ft2', 'st3']
+const SUPPORTED_PROCESSORS = ['sc68', 'openmpt', 'ahx', 'pt', 'ft2', 'st3', 'psgplay']
 
 const FORMAT_PROCESSOR_MAPPING = {
     'sc68': 'sc68',
@@ -16,8 +17,6 @@ const FORMAT_PROCESSOR_MAPPING = {
     'mod': 'pt',
     'xm': 'ft2',
     'ahx': 'ahx'
-
-
 }
 
 export class NodePlayer {
@@ -51,6 +50,8 @@ export class NodePlayer {
     lasFullFilename;
     lastData;
     lastTrack;
+
+    chvu = new Float32Array(32);
 
     // hooks
     onPlayerReady = function () { console.log('onPlayerReady') }
@@ -96,6 +97,7 @@ export class NodePlayer {
         this.merger.connect(this.mainGain);
         this.mainGain.connect(this.panNode)
         this.panNode.connect(this.audioContext.destination);
+
     }
 
     get leftNode() {
@@ -205,22 +207,26 @@ export class NodePlayer {
                 this.onTrackEnd()
                 break;
 
+            case 'chvu':
+                this.chvu = data.chvu
+                break;
+
         }
     }
 
 
     async load(url, track = 1) {
 
-        let ext=url.split('.').pop().toLowerCase().trim();
+        let ext = url.split('.').pop().toLowerCase().trim();
         if (FORMAT_PROCESSOR_MAPPING[ext] === undefined) {
             // unknown extension, maybe amiga-style prefix?
-            ext=url.split('/').pop().split('.').shift().toLowerCase().trim();
+            ext = url.split('/').pop().split('.').shift().toLowerCase().trim();
             if (FORMAT_PROCESSOR_MAPPING[ext] === undefined) {
-            // ok, give up
-            return false;
+                // ok, give up
+                return false;
             }
         }
-        this.format=ext;
+        this.format = ext;
 
         this.selectWorkletProcessor(FORMAT_PROCESSOR_MAPPING[ext])
 
@@ -478,6 +484,11 @@ export class NodePlayer {
 
             return 0;
         }
+    }
+
+    addScope(scope) {
+        scope.register_player(this)
+        this.scopes.push(scope)
     }
 
     addScopeToMain(scope) {

@@ -651,6 +651,10 @@ class SC68WorkletProcessor extends AudioWorkletProcessor {
         this.numberOfSamplesToRender = 0;
         this.sourceBufferIdx = 0;
 
+        // volumes values for the 3 voices
+        this.publishChannelVU = true;
+        this.chvu = new Float32Array(32);
+
         // // additional timeout based "song end" handling
         this.currentPlaytime = 0;
         this.currentTimeout = -1;
@@ -884,6 +888,18 @@ class SC68WorkletProcessor extends AudioWorkletProcessor {
             }
             // keep track how long we are playing: just filled one WebAudio buffer which will be played at
             this.currentPlaytime += outSize * this.correctSampleRate / this.sampleRate;
+
+            // update this.chvu from player channel vu
+            this.chvu[0] = this.backendAdapter.Module.ccall('emu_getVolVoice1', 'number') & 0xf;
+			this.chvu[1] = this.backendAdapter.Module.ccall('emu_getVolVoice2', 'number') & 0xf;
+			this.chvu[2] = this.backendAdapter.Module.ccall('emu_getVolVoice3', 'number') & 0xf;
+
+            if (this.publishChannelVU) {
+                this.port.postMessage({
+                    type: 'chvu',
+                    chvu: this.chvu.map(x => x/16)
+                });
+            }
 
             // silence detection at end of song
             if ((this.silenceStarttime > 0) && ((this.currentPlaytime - this.silenceStarttime) >= this.silenceTimeout * this.correctSampleRate) && (this.silenceTimeout > 0)) {

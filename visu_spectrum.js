@@ -3,9 +3,22 @@ import { VisuBase } from './visu_base.js'
 
 export class Spectrum extends VisuBase{
 
-    fftSize = 256
+    width = 200
+    height = 200
+
     minDecibels = -90;
     maxDecibels = -10;
+    fftSize = 4096
+    smoothingTimeConstant = 0.85;
+
+    constructor(canvas) {
+        super(canvas)
+        this.canvas = canvas;
+        this.canvasCtx = this.canvas.getContext('2d');
+        this.canvas.width = this.width
+        this.canvas.height = this.height
+        this.fftSize = this.fftSize
+    }
 
     render() {
 
