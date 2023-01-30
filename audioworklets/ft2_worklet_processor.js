@@ -1493,11 +1493,13 @@ class FT2WorkletProcessor extends AudioWorkletProcessor {
             }
             this.songInfo['samplenames'] = samplenames
 
+            this.port.postMessage({
+                type: 'songInfoUpdated',
+                songInfo: this.songInfo
+            });
+
             this.isSongReady = true
             this.loading = false;
-
-
-
         }
 
         return true

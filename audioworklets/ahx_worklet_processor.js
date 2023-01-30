@@ -1315,6 +1315,8 @@ class AHXWorkletProcessor extends AudioWorkletProcessor {
         this.mixingBufferL = new Array(this.mixingBufferSize);
         this.mixingBufferR = new Array(this.mixingBufferSize);
 
+        this.chvu = new Float32Array(4);
+
         // onmessage binding
         this.port.onmessage = this.onmessage.bind(this);
     }
@@ -1326,18 +1328,17 @@ class AHXWorkletProcessor extends AudioWorkletProcessor {
 
             case 'loadMusicData':
                 this.isSongReady = this.loadMusicData(data.sampleRate, data.path, data.filename, data.data, data.options)
+                if (this.isSongReady) {
+                    this.songInfo = this.updateSongInfo(data.filename)
+                    this.port.postMessage({
+                        type: 'songInfoUpdated',
+                        songInfo: this.songInfo
+                    });
+                }
                 break;
 
             case 'evalTrackOptions':
                 // not implemented
-                break;
-
-            case 'updateSongInfo':
-                this.songInfo = this.updateSongInfo();
-                this.port.postMessage({
-                    type: 'songInfoUpdated',
-                    songInfo: this.songInfo
-                });
                 break;
 
             case 'resetSampleRate':
@@ -1350,6 +1351,7 @@ class AHXWorkletProcessor extends AudioWorkletProcessor {
 
             case 'pause':
                 this.isPaused = true;
+                console.log(this.Player)
                 break;
 
             case 'registerFileData':
@@ -1365,7 +1367,7 @@ class AHXWorkletProcessor extends AudioWorkletProcessor {
                 break;
 
             case 'seek':
-                //
+
                 break
 
         }
@@ -1381,7 +1383,9 @@ class AHXWorkletProcessor extends AudioWorkletProcessor {
 
 
     updateSongInfo() {
-        const data = {};
+        const data = {
+            'title': this.Player.Song.Name
+        };
         return data;
     }
 

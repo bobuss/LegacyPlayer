@@ -560,7 +560,6 @@ class SC68BackendAdapter extends EmsHEAP16BackendAdapter {
         return this.songInfo
     }
 
-
     isStereo() {
         return this.getChannels() == 2;
     }
@@ -682,18 +681,17 @@ class SC68WorkletProcessor extends AudioWorkletProcessor {
 
             case 'loadMusicData':
                 this.isSongReady = (this.backendAdapter.loadMusicData(data.sampleRate, data.path, data.filename, data.data, data.options) == 0)
+                if (this.isSongReady) {
+                    this.songInfo = this.backendAdapter.updateSongInfo(data.filename)
+                    this.port.postMessage({
+                        type: 'songInfoUpdated',
+                        songInfo: this.songInfo
+                    });
+                }
                 break;
 
             case 'evalTrackOptions':
                 this.backendAdapter.evalTrackOptions(data.options);
-                break;
-
-            case 'updateSongInfo':
-                const songInfo = this.backendAdapter.updateSongInfo(data.filename);
-                this.port.postMessage({
-                    type: 'songInfoUpdated',
-                    songInfo: songInfo
-                });
                 break;
 
             case 'resetSampleRate':

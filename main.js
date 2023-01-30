@@ -46,6 +46,8 @@ await player.loadWorkletProcessor('st3')
 await player.loadWorkletProcessor('psgplay')
 
 player.onSongInfoUpdated = function() {
+    const e1 = document.getElementById('info')
+    e1.innerHTML = JSON.stringify(this.songInfo, undefined, 2)
     if (this.songInfo['duration'] !== undefined) {
         const el = document.getElementById('duration')
         el.innerHTML = this.songInfo['duration']

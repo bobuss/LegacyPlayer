@@ -129,7 +129,7 @@ export class NodePlayer {
 
                 const timestamp = Date.now()
 
-                await this.audioContext.audioWorklet.addModule(processorName + "_worklet_processor.js?" + timestamp)
+                await this.audioContext.audioWorklet.addModule(`audioWorklets/${processorName}_worklet_processor.js?${timestamp}`)
 
                 const audioWorkletNode = new AudioWorkletNode(
                     this.audioContext,
@@ -276,11 +276,6 @@ export class NodePlayer {
             // in scenarios where a synchronous file-load is involved this first call will typically fail
             // but trigger the file load
             this.setTrack(track)
-
-            this.audioWorkletNode.port.postMessage({
-                type: 'updateSongInfo',
-                filename: fullFilename
-            })
 
             console.log('prepareTrackForPlayback succeded')
             return true;
