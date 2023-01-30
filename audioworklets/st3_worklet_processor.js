@@ -1037,6 +1037,7 @@ class ST3WorkletProcessor extends AudioWorkletProcessor {
     mixval = 8.0;
     chvu = new Float32Array(32);
     publishChannelVU = true
+    stereoSeparation = 100; // from 0 (mono) to 200 (original full separation)
 
     // container for song infos like: name, author, etc
     songInfo = {};
@@ -1149,17 +1150,11 @@ class ST3WorkletProcessor extends AudioWorkletProcessor {
                 outp[0] = bufs[0][s];
                 outp[1] = bufs[1][s];
 
-                // a more headphone-friendly stereo separation
-                // if (this.separation) {
-                //     t = outp[0];
-                //     if (this.separation == 2) { // mono
-                //         outp[0] = outp[0] * 0.5 + outp[1] * 0.5;
-                //         outp[1] = outp[1] * 0.5 + t * 0.5;
-                //     } else { // narrow stereo
-                //         outp[0] = outp[0] * 0.65 + outp[1] * 0.35;
-                //         outp[1] = outp[1] * 0.65 + t * 0.35;
-                //     }
-                // }
+                // apply stero separation
+                const thissampleL = outp[0]
+                const thissampleR = outp[1]
+                outp[0] =  thissampleL + ( 1 - (this.stereoSeparation / 200)) * thissampleR
+                outp[1] =  thissampleR + ( 1 - (this.stereoSeparation / 200)) * thissampleL
 
                 // scale down and soft clip
                 outp[0] /= this.mixval; outp[0] = 0.5 * (Math.abs(outp[0] + 0.975) - Math.abs(outp[0] - 0.975));
