@@ -90,7 +90,7 @@ else if (typeof exports === 'object')
 
  version 1.0
 
- 	Copyright (C) 2015 Juergen Wothke
+     Copyright (C) 2015 Juergen Wothke
 
 version 2.0
 
@@ -419,7 +419,7 @@ const SAMPLES_PER_BUFFER = 1024; //1024
 
 const backend_module = backend_SC68();
 
-let sc68BackendInitOnce = false;	// must be global (otherwise reinit of backend may fail)
+let sc68BackendInitOnce = false;    // must be global (otherwise reinit of backend may fail)
 
 class SC68BackendAdapter extends EmsHEAP16BackendAdapter {
 
@@ -436,7 +436,7 @@ class SC68BackendAdapter extends EmsHEAP16BackendAdapter {
         const buf = this.Module._malloc(data.length);
         this.Module.HEAPU8.set(data, buf);
 
-        let timeout = -1;	// means: keep built-in timeout
+        let timeout = -1;    // means: keep built-in timeout
         if ((typeof options != 'undefined') && typeof options.timeout != 'undefined') {
             timeout = options.timeout * 1000;
         }
@@ -456,8 +456,8 @@ class SC68BackendAdapter extends EmsHEAP16BackendAdapter {
     }
 
     evalTrackOptions(options) {
-        const track = options.track ? options.track : 0;	// frontend counts from 0
-        this.currentTrack = track + 1;					// sc68 starts counting at 1
+        const track = options.track ? options.track : 0;    // frontend counts from 0
+        this.currentTrack = track + 1;                    // sc68 starts counting at 1
 
         // for sc68 "0" means "all"..
         const ret = this.Module.ccall('emu_change_subsong', 'number', ['number'], [this.currentTrack]);
@@ -493,7 +493,7 @@ class SC68BackendAdapter extends EmsHEAP16BackendAdapter {
     getAudioBuffer() {
         const ptr = this.Module.ccall('emu_get_audio_buffer', 'number');
         // make it a this.Module.HEAP16 pointer
-        return ptr >> 1;	// 2 x 16 bit samples
+        return ptr >> 1;    // 2 x 16 bit samples
     }
 
     getAudioBufferLength() {
@@ -586,7 +586,7 @@ class SC68BackendAdapter extends EmsHEAP16BackendAdapter {
         if (name in this.replayCache) {
             const byteArray = this.replayCache[name];
             console.log('loading Replay ' + name)
-            const bytes = new Uint8Array(name.length + 1);	// we dont have any unicode here
+            const bytes = new Uint8Array(name.length + 1);    // we dont have any unicode here
 
             let i
             for (i = 0; i < name.length; i++) {
@@ -794,11 +794,11 @@ class SC68WorkletProcessor extends AudioWorkletProcessor {
     }
 
     detectSilence(s) {
-        if (this.silenceStarttime == 0) {	// i.e. song has been playing
-            if (s == 0) {	// silence detected
+        if (this.silenceStarttime == 0) {    // i.e. song has been playing
+            if (s == 0) {    // silence detected
                 this.silenceStarttime = this.currentPlaytime;
             }
-        } else if (s > 0) {	// i.e. false alarm or very start of playback
+        } else if (s > 0) {    // i.e. false alarm or very start of playback
             this.silenceStarttime = 0;
         }
     }
@@ -889,8 +889,8 @@ class SC68WorkletProcessor extends AudioWorkletProcessor {
 
             // update this.chvu from player channel vu
             this.chvu[0] = this.backendAdapter.Module.ccall('emu_getVolVoice1', 'number') & 0xf;
-			this.chvu[1] = this.backendAdapter.Module.ccall('emu_getVolVoice2', 'number') & 0xf;
-			this.chvu[2] = this.backendAdapter.Module.ccall('emu_getVolVoice3', 'number') & 0xf;
+            this.chvu[1] = this.backendAdapter.Module.ccall('emu_getVolVoice2', 'number') & 0xf;
+            this.chvu[2] = this.backendAdapter.Module.ccall('emu_getVolVoice3', 'number') & 0xf;
 
             if (this.publishChannelVU) {
                 this.port.postMessage({

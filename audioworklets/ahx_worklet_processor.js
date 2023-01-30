@@ -1280,7 +1280,7 @@ class AHXWorkletProcessor extends AudioWorkletProcessor {
 
     pos = [0, 0, 0, 0]
 
-    channels = 2;
+    channels = 4;
     sampleRate = 44100;
     inputSampleRate = 44100;
 
@@ -1307,6 +1307,8 @@ class AHXWorkletProcessor extends AudioWorkletProcessor {
     // setup asyc completion of initialization
     isSongReady = false;    // initialized (including file-loads that might have been necessary)
 
+    publishChannelVU = true
+
 
     constructor() {
         super();
@@ -1315,7 +1317,7 @@ class AHXWorkletProcessor extends AudioWorkletProcessor {
         this.mixingBufferL = new Array(this.mixingBufferSize);
         this.mixingBufferR = new Array(this.mixingBufferSize);
 
-        this.chvu = new Float32Array(4);
+        this.chvu = new Float32Array(this.channels);
 
         // onmessage binding
         this.port.onmessage = this.onmessage.bind(this);
@@ -1495,6 +1497,19 @@ class AHXWorkletProcessor extends AudioWorkletProcessor {
                 if (this.bufferOffset >= this.bufferFull) {
                     this.bufferOffset = this.bufferFull = 0;
                 }
+
+                // update this.chvu from player channel vu
+                for (let i=0 ; i<this.channels ; i++) {
+                    this.chvu[i] = this.Player.Voices[i].VoiceVolume / (64)
+                }
+
+                if (this.publishChannelVU) {
+                    this.port.postMessage({
+                        type: 'chvu',
+                        chvu: this.chvu
+                    });
+                }
+
             }
         }
 

@@ -3879,20 +3879,20 @@ class PSGPlayWorkletProcessor extends AudioWorkletProcessor {
             while (framesToRender > 0) {
                 let framesPerChunk = Math.min(framesToRender, maxFramesPerChunk);
                 console.log(framesPerChunk)
-				//let actualFramesPerChunk = this.libpsgplay.ccall('psgplay_read_stereo','number',['number','number','number'],[this.psgplayPtr, this.bufferPtr, framesPerChunk]);
+                //let actualFramesPerChunk = this.libpsgplay.ccall('psgplay_read_stereo','number',['number','number','number'],[this.psgplayPtr, this.bufferPtr, framesPerChunk]);
                 let actualFramesPerChunk = this.libpsgplay._psgplay_read_stereo(this.psgplayPtr, this.bufferPtr, framesPerChunk)
                 console.log(1)
-				let rawAudio = this.libpsgplay.HEAP16.subarray(this.bufferPtr/2 , this.bufferPtr/2 + actualFramesPerChunk*2);
+                let rawAudio = this.libpsgplay.HEAP16.subarray(this.bufferPtr/2 , this.bufferPtr/2 + actualFramesPerChunk*2);
 
-				for (let i = 0; i < actualFramesPerChunk; ++i) {
-					outputL[framesRendered + i] = (rawAudio[i*2])/0x8000;
-					outputR[framesRendered + i] = (rawAudio[i*2+1])/0x8000;
-				}
-				framesToRender -= actualFramesPerChunk;
-				framesRendered += actualFramesPerChunk;
-				if (actualFramesPerChunk < framesPerChunk) {
-					break;
-				}
+                for (let i = 0; i < actualFramesPerChunk; ++i) {
+                    outputL[framesRendered + i] = (rawAudio[i*2])/0x8000;
+                    outputR[framesRendered + i] = (rawAudio[i*2+1])/0x8000;
+                }
+                framesToRender -= actualFramesPerChunk;
+                framesRendered += actualFramesPerChunk;
+                if (actualFramesPerChunk < framesPerChunk) {
+                    break;
+                }
             }
             if (ended) {
                 //this.disconnect();

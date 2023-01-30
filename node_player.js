@@ -6,7 +6,6 @@
 * Terms of Use: This software is licensed under a CC BY-NC-SA
 * (http://creativecommons.org/licenses/by-nc-sa/4.0/).
 */
-import lottieWeb from 'https://cdn.skypack.dev/lottie-web';
 
 const SUPPORTED_PROCESSORS = ['sc68', 'openmpt', 'ahx', 'pt', 'ft2', 'st3', 'psgplay']
 
