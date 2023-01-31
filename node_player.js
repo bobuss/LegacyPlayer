@@ -18,6 +18,31 @@ const FORMAT_PROCESSOR_MAPPING = {
     'ahx': 'ahx'
 }
 
+const workletProcessorCodes = {
+    'ft2': ["lib/utils.js", "lib/ft2.js", "audioworklets/ft2_worklet_processor.js"],
+    'st3': ["lib/utils.js", "lib/st3.js", "audioworklets/st3_worklet_processor.js"],
+    'pt': ["lib/pt.js", "audioworklets/pt_worklet_processor.js"],
+    'ahx': ["lib/ahx.js", "audioworklets/ahx_worklet_processor.js"],
+    'openmpt': ["lib/libopenmpt.js", "audioworklets/openmpt_worklet_processor.js"],
+    'sc68': ["lib/sc68.js", "lib/sc68_backend_adapter.js", "audioworklets/sc68_worklet_processor.js"],
+    'psgplay': ["lib/psgplay.js", "audioworklets/psgplay_worklet_processor.js"],
+};
+
+// from https://github.com/padenot/ringbuf.js/blob/main/public/example/utils.js
+function URLFromFiles(files) {
+    const promises = files.map((file) =>
+      fetch(file).then((response) => response.text())
+    );
+
+    return Promise.all(promises).then((texts) => {
+      const text = texts.join("");
+      const blob = new Blob([text], { type: "application/javascript" });
+
+      return URL.createObjectURL(blob);
+    });
+  }
+
+
 export class NodePlayer {
 
     spectrumEnabled = false
@@ -64,8 +89,8 @@ export class NodePlayer {
         this.audioContext = audioContext
         this.sampleRate = this.audioContext.sampleRate;
 
-        const audioWorkletSupport = !!AudioWorkletNode.toString().match(/native code/);
-        if (!audioWorkletSupport) {
+        const audioworkletSupport = !!AudioWorkletNode.toString().match(/native code/);
+        if (!audioworkletSupport) {
             alert('Browser not supporter. Needs AudioWorklet')
         }
 
@@ -126,9 +151,12 @@ export class NodePlayer {
 
             if (this.processors[processorName] === undefined) {
 
-                const timestamp = Date.now()
-
-                await this.audioContext.audioWorklet.addModule(`audioWorklets/${processorName}_worklet_processor.js?${timestamp}`)
+                // const timestamp = Date.now()
+                // cross browser hack from
+                // https://mtg.github.io/essentia.js/docs/api/tutorial-2.%20Real-time%20analysis.html#using-the-web-audio-api-with-audioworklets
+                let concatenatedCode = await URLFromFiles(workletProcessorCodes[processorName])
+                await this.audioContext.audioWorklet.addModule(concatenatedCode);
+                // await this.audioContext.audioWorklet.addModule(`audioworklets/${processorName}_worklet_processor.js?${timestamp}`)
 
                 const audioWorkletNode = new AudioWorkletNode(
                     this.audioContext,
