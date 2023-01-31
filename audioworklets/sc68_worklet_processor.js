@@ -60,7 +60,7 @@ class SC68WorkletProcessor extends AudioWorkletProcessor {
 
     onmessage(e) {
         const { data } = e;
-        debug('onmessage ' + data.type)
+        console.log('onmessage ' + data.type)
         switch (data.type) {
 
             case 'loadMusicData':
@@ -220,7 +220,7 @@ class SC68WorkletProcessor extends AudioWorkletProcessor {
                 if (this.numberOfSamplesToRender === 0) {
                     let status;
                     if ((this.currentTimeout > 0) && (this.currentPlaytime > this.currentTimeout)) {
-                        debug("'song end' forced after " + this.currentTimeout / this.correctSampleRate + " secs");
+                        console.log("'song end' forced after " + this.currentTimeout / this.correctSampleRate + " secs");
                         status = 1;
                     } else {
                         status = this.backendAdapter.computeAudioSamples()
@@ -231,7 +231,7 @@ class SC68WorkletProcessor extends AudioWorkletProcessor {
                         this.fillEmpty(outSize, output1, output2);
 
                         if (status < 0) {
-                            debug('stuck by file-load')
+                            console.log('stuck by file-load')
                             // file-load: emu just discovered that we need to load another file
                             // this.isPaused = true;
                             this.isSongReady = false;     // previous init is invalid

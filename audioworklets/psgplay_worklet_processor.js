@@ -34,7 +34,7 @@ class PSGPlayWorkletProcessor extends AudioWorkletProcessor {
 
     onmessage(e) {
         const { data } = e;
-        debug('onmessage ' + data.type)
+        console.log('onmessage ' + data.type)
         switch (data.type) {
             case 'loadMusicData':
                 this.isSongReady = this.loadMusicData(data.sampleRate, data.path, data.filename, data.data, data.options)
@@ -76,7 +76,7 @@ class PSGPlayWorkletProcessor extends AudioWorkletProcessor {
             this.decrunchedBytes = this.libpsgplay._malloc(s);
 
             if (this.libpsgplay._ice_decrunch(this.decrunchedBytes, byteArray, byteArray.byteLength) == -1) {
-                debug("ICE decrunch failed\n");
+                console.log("ICE decrunch failed\n");
                 return false;
             }
 
@@ -136,14 +136,14 @@ class PSGPlayWorkletProcessor extends AudioWorkletProcessor {
             let framesRendered = 0;
             let ended = false
 
-            debug(this.psgplayPtr)
-            debug( this.bufferPtr)
+            console.log(this.psgplayPtr)
+            console.log( this.bufferPtr)
             while (framesToRender > 0) {
                 let framesPerChunk = Math.min(framesToRender, maxFramesPerChunk);
-                debug(framesPerChunk)
+                console.log(framesPerChunk)
                 //let actualFramesPerChunk = this.libpsgplay.ccall('psgplay_read_stereo','number',['number','number','number'],[this.psgplayPtr, this.bufferPtr, framesPerChunk]);
                 let actualFramesPerChunk = this.libpsgplay._psgplay_read_stereo(this.psgplayPtr, this.bufferPtr, framesPerChunk)
-                debug(1)
+                console.log(1)
                 let rawAudio = this.libpsgplay.HEAP16.subarray(this.bufferPtr/2 , this.bufferPtr/2 + actualFramesPerChunk*2);
 
                 for (let i = 0; i < actualFramesPerChunk; ++i) {

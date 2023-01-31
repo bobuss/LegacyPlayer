@@ -47,7 +47,7 @@ class OpenMPTWorkletProcessor extends AudioWorkletProcessor {
 
     onmessage(e) {
         const { data } = e;
-        debug('onmessage ' + data.type)
+        console.log('onmessage ' + data.type)
         switch (data.type) {
 
             case 'loadMusicData':
@@ -108,7 +108,7 @@ class OpenMPTWorkletProcessor extends AudioWorkletProcessor {
         this.libopenmpt._free(ptrToFile);
 
         if (this.modulePtr !== null) {
-            debug('resetSampleRate')
+            console.log('resetSampleRate')
             this.resetSampleRate(sampleRate, 44100);
             this._currentPath = path;
             this._currentFile = filename;
@@ -150,7 +150,7 @@ class OpenMPTWorkletProcessor extends AudioWorkletProcessor {
         data['num_channels'] = num_channels
 
         const ctls = this.libopenmpt._openmpt_module_get_ctls(this.modulePtr)
-        //debug(ctls)
+        //console.log(ctls)
         return data;
     }
 

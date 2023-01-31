@@ -53,7 +53,7 @@ class AHXWorkletProcessor extends AudioWorkletProcessor {
 
     onmessage(e) {
         const { data } = e;
-        debug('onmessage ' + data.type)
+        console.log('onmessage ' + data.type)
         switch (data.type) {
 
             case 'loadMusicData':
