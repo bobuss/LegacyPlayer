@@ -4,8 +4,8 @@ import { VuMeter } from './visu_vumeter.js'
 import { Scope } from './visu_scope.js'
 import { VoiceMeter } from './visu_voice_meter.js';
 
-const songUrlMPT = 'editedonward.xm'
-const songUrlPT = 'http://modland.com/pub/modules/Protracker/Travolta/spacefunk.mod'
+const songUrlMPT = 'http://modland.com/pub/modules/Fasttracker%202/Jugi/onward%20(party%20version).xm'
+const songUrlPT = 'http://modland.com/pub/modules/Soundtracker/Karsten%20Obarski/amegas.mod'
 const songUrlPT2 = 'dope.mod'
 const songUrlSC68 = 'http://modland.com/pub/modules/SC68/Jochen%20Hippel/wings%20of%20death%20-%20title.sc68'
 const songUrlSNDH = 'http://modland.com/pub/modules/SNDH/Jochen%20Hippel/enchanted%20land.sndh'

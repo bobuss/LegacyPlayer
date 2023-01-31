@@ -24,7 +24,7 @@ const timestamp = Date.now()
 const workletProcessorCodes = {
     'ft2': ["lib/common.js", "lib/utils.js", "lib/ft2.js", `audioworklets/ft2_worklet_processor.js?${timestamp}`],
     'st3': ["lib/common.js", "lib/utils.js", "lib/st3.js", `audioworklets/st3_worklet_processor.js?${timestamp}`],
-    'pt': ["lib/common.js", "lib/pt.js", `audioworklets/pt_worklet_processor.js?${timestamp}`],
+    'pt': ["lib/common.js", `lib/pt.js?${timestamp}`, `audioworklets/pt_worklet_processor.js?${timestamp}`],
     'ahx': ["lib/common.js", "lib/ahx.js", `audioworklets/ahx_worklet_processor.js?${timestamp}`],
     'openmpt': ["lib/common.js", "lib/libopenmpt.js", `audioworklets/openmpt_worklet_processor.js?${timestamp}`],
     'sc68': ["lib/common.js", "lib/sc68.js", "lib/sc68_backend_adapter.js", `audioworklets/sc68_worklet_processor.js?${timestamp}`],
@@ -127,23 +127,28 @@ export class NodePlayer {
 
     }
 
+
     get leftNode() {
         return this.leftGain;
     }
+
 
     get rightNode() {
         return this.rightGain
     }
 
+
     get masterNode() {
         return this.mainGain
     }
+
 
     connect(gainNode, scope) {
         const analyser = scope.createAnalyser(this.audioContext)
         gainNode.connect(analyser)
         this.scopes.push(scope)
     }
+
 
     async loadWorkletProcessor(processorName) {
 
@@ -180,6 +185,7 @@ export class NodePlayer {
         }
     }
 
+
     selectWorkletProcessor(processorName) {
         if (SUPPORTED_PROCESSORS.indexOf(this.processorName) != -1 && this.processorName in this.processors) {
             // stop and unplug the current worklet processor
@@ -188,6 +194,7 @@ export class NodePlayer {
         }
         this.processorName = processorName
         this.audioWorkletNode.connect(this.splitter)
+        debug(`"${processorName}" processor loaded`)
     }
 
 

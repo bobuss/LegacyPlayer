@@ -63,9 +63,16 @@ AHX backend by Bryc:
 Native javascript origin backends for Protracker (pt), ScreamTracker3 (st3) and FastTracker 2 (ft2) by electronoora:
 - https://github.com/electronoora/webaudio-mod-player
 
+More format (old Soundtracker mods) by krzykos:
+- https://github.com/krzykos/webaudio-mod-player/tree/master
+
 
 
 
 
 ## TODO
 - seek
+- getInfo with common fields
+- Better API (play / stop / pause / resume ?)
+- UI
+- Decide what to du at the end of a song
