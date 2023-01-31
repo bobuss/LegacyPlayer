@@ -4,15 +4,15 @@ import { VuMeter } from './visu_vumeter.js'
 import { Scope } from './visu_scope.js'
 import { VoiceMeter } from './visu_voice_meter.js';
 
-const songUrlMPT = 'http://modland.com/pub/modules/Fasttracker%202/Jugi/onward.xm'
+const songUrlMPT = 'editedonward.xm'
+const songUrlPT = 'http://modland.com/pub/modules/Protracker/Travolta/spacefunk.mod'
+const songUrlPT2 = 'dope.mod'
 const songUrlSC68 = 'http://modland.com/pub/modules/SC68/Jochen%20Hippel/wings%20of%20death%20-%20title.sc68'
 const songUrlSNDH = 'http://modland.com/pub/modules/SNDH/Jochen%20Hippel/enchanted%20land.sndh'
 const songUrlAHX = 'http://modland.com/pub/modules/AHX/AceMan/arrrr!ghwblwubwubwub.ahx'
-const songUrlPT = 'http://modland.com/pub/modules/Protracker/Travolta/spacefunk.mod'
-
-const songUrlFT2 = 'http://modland.com/pub/modules/Fasttracker%202/Jugi/dope.xm'
-
 const songUrlST3 = 'http://modland.com/pub/modules/Screamtracker%203/Skaven/2nd%20reality.s3m'
+
+
 
 const audioContext = new (window.AudioContext || window.webkitAudioContext)();
 
@@ -54,10 +54,27 @@ player.onSongInfoUpdated = function() {
     }
 }
 
+const loadFT2Button = document.getElementById('loadft2');
+loadFT2Button.addEventListener('click', async (e) => {
+    await player.load(songUrlMPT, {"processor": 'ft2'});
+});
+
 const loadmptButton = document.getElementById('loadmpt');
 loadmptButton.addEventListener('click', async (e) => {
-    await player.load(songUrlMPT);
+    await player.load(songUrlMPT, {"processor": 'openmpt'});
 });
+
+const loadPTButton = document.getElementById('loadpt');
+loadPTButton.addEventListener('click', async (e) => {
+    await player.load(songUrlPT)
+});
+
+
+const loadPTButton2 = document.getElementById('loadpt2');
+loadPTButton2.addEventListener('click', async (e) => {
+    await player.load(songUrlPT2)
+});
+
 
 const loadSNDHButton = document.getElementById('loadsndh');
 loadSNDHButton.addEventListener('click', async (e) => {
@@ -74,15 +91,8 @@ loadAHXButton.addEventListener('click', async (e) => {
     await player.load(songUrlAHX);
 });
 
-const loadPTButton = document.getElementById('loadpt');
-loadPTButton.addEventListener('click', async (e) => {
-    await player.load(songUrlPT)
-});
 
-const loadFT2Button = document.getElementById('loadft2');
-loadFT2Button.addEventListener('click', async (e) => {
-    await player.load(songUrlFT2)
-});
+
 
 const loadST3Button = document.getElementById('loadst3');
 loadST3Button.addEventListener('click', async (e) => {

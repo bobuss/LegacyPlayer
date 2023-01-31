@@ -1353,7 +1353,6 @@ class AHXWorkletProcessor extends AudioWorkletProcessor {
 
             case 'pause':
                 this.isPaused = true;
-                console.log(this.Player)
                 break;
 
             case 'registerFileData':

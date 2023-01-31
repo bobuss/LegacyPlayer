@@ -214,20 +214,28 @@ export class NodePlayer {
     }
 
 
-    async load(url, track = 1) {
+    async load(url, options={}) {
 
-        let ext = url.split('.').pop().toLowerCase().trim();
-        if (FORMAT_PROCESSOR_MAPPING[ext] === undefined) {
-            // unknown extension, maybe amiga-style prefix?
-            ext = url.split('/').pop().split('.').shift().toLowerCase().trim();
-            if (FORMAT_PROCESSOR_MAPPING[ext] === undefined) {
-                // ok, give up
-                return false;
-            }
+        if (options.track === undefined) {
+            options.track = 1
         }
-        this.format = ext;
 
-        this.selectWorkletProcessor(FORMAT_PROCESSOR_MAPPING[ext])
+        if (options.processor === undefined) {
+            let ext = url.split('.').pop().toLowerCase().trim();
+            if (FORMAT_PROCESSOR_MAPPING[ext] === undefined) {
+                // unknown extension, maybe amiga-style prefix?
+                ext = url.split('/').pop().split('.').shift().toLowerCase().trim();
+                if (FORMAT_PROCESSOR_MAPPING[ext] === undefined) {
+                    // ok, give up
+                    return false;
+                }
+            }
+            this.format = ext;
+
+            this.selectWorkletProcessor(FORMAT_PROCESSOR_MAPPING[ext])
+        } else {
+            this.selectWorkletProcessor(options.processor)
+        }
 
         await fetch(url)
             .then(response => {
@@ -237,7 +245,7 @@ export class NodePlayer {
                 return response.arrayBuffer();
             })
             .then(buffer => {
-                return this.prepareTrackForPlayback(url, buffer, track)
+                return this.prepareTrackForPlayback(url, buffer, options.track)
             })
             .catch(error => {
                 // Handle/report error
@@ -263,6 +271,8 @@ export class NodePlayer {
         this.lastTrack = track
 
         this.playing = false;
+
+        this.chvu = new Float32Array(32);
 
         const status = this.loadMusicData(fullFilename, data);
 

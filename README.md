@@ -15,7 +15,11 @@ Original work by by Juergen Wothke:
 - openmpt backend: https://bitbucket.org/wothke/webmpt/src/master/
   - emscripten worklet-compatible module built manually. Will push that on a repository, on day
 
-AHX backend by Bryc: https://github.com/bryc/ahx-web-player
+AHX backend by Bryc:
+- https://github.com/bryc/ahx-web-player
+
+Native javascript origin backends for Protracker, ScreamTracker3 and FastTracker 2 but electronoora:
+- https://github.com/electronoora/webaudio-mod-player
 
 
 
@@ -34,25 +38,18 @@ await player.loadWorkletProcessor('openmpt')
 
 const loadmptButton = document.getElementById('loadmpt');
 loadmptButton.addEventListener('click', async (e) => {
-    await player.load(songUrlMPT, 'openmpt');
+    await player.load(songUrlMPT);
     player.play()
 });
 
 const loadsc68Button = document.getElementById('loadsc68');
 loadsc68Button.addEventListener('click', async (e) => {
-    await player.load(songUrlSC68, 'sc68');
+    await player.load(songUrlSC68);
     player.play()
 });
 
 ```
 
-
-### Adding spectrum (Work in Progress: hardcoded)
-
-```javascript
-const canvas = document.getElementById('visualizer')
-player.enableSpectrum(canvas)
-```
 
 
 ## TODO

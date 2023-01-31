@@ -46,7 +46,10 @@ function dos2utf(c) {
     return String.fromCharCode(cs[c - 128]);
 }
 
-
+// not that my ears can hear the difference but this seems to be the correct value:
+// ftp://ftp.modland.com/pub/documents/format_documentation/Protracker%20effects%20(MODFIL12.TXT)%20(.mod).txt
+const AMIGA_PALFREQUENCY = 7093790;
+const DOUBLE_AMIGA_PALFREQUENCY = AMIGA_PALFREQUENCY * 2;
 
 function Fasttracker() {
     var i, t;
@@ -574,6 +577,7 @@ Fasttracker.prototype.calcperiod = function (mod, note, finetune) {
     } else {
         pv = 7680.0 - note * 64.0 - finetune / 2;
     }
+
     return pv;
 }
 
@@ -770,9 +774,11 @@ Fasttracker.prototype.process_tick = function (mod) {
         }
         if (mod.channel[ch].command < 36) {
             if (!mod.tick) {
+
                 // process only on tick 0
                 mod.effects_t0[mod.channel[ch].command](mod, ch);
             } else {
+
                 mod.effects_t1[mod.channel[ch].command](mod, ch);
             }
         }
@@ -780,11 +786,15 @@ Fasttracker.prototype.process_tick = function (mod) {
         // recalc sample speed if voiceperiod has changed
         if ((mod.channel[ch].flags & 1 || mod.flags & 2) && mod.channel[ch].voiceperiod) {
             var f;
+
             if (mod.amigaperiods) {
-                f = 8287.137 * 1712.0 / mod.channel[ch].voiceperiod;
+                // FIX by bobuss: use correct amiga frequency
+                f = DOUBLE_AMIGA_PALFREQUENCY / mod.channel[ch].voiceperiod;
+
             } else {
                 f = 8287.137 * Math.pow(2.0, (4608.0 - mod.channel[ch].voiceperiod) / 768.0);
             }
+
             mod.channel[ch].samplespeed = f / mod.samplerate;
         }
 
@@ -1054,7 +1064,8 @@ Fasttracker.prototype.effect_t0_2 = function (mod, ch) { // 2 slide down
     if (mod.channel[ch].data) mod.channel[ch].slidedownspeed = mod.channel[ch].data * 4;
 }
 Fasttracker.prototype.effect_t0_3 = function (mod, ch) { // 3 slide to note
-    if (mod.channel[ch].data) mod.channel[ch].slidetospeed = mod.channel[ch].data * 4;
+    // FIX from bobuss: mod.channel[ch].data * 4 had wrong effect
+    if (mod.channel[ch].data) mod.channel[ch].slidetospeed = mod.channel[ch].data * 16;
 }
 Fasttracker.prototype.effect_t0_4 = function (mod, ch) { // 4 vibrato
     if (mod.channel[ch].data & 0x0f && mod.channel[ch].data & 0xf0) {
@@ -1233,7 +1244,6 @@ Fasttracker.prototype.effect_t1_0 = function (mod, ch) { // 0 arpeggio
         var apn = mod.channel[ch].note;
         if ((mod.tick % 3) == 1) apn += mod.channel[ch].arpeggio >> 4;
         if ((mod.tick % 3) == 2) apn += mod.channel[ch].arpeggio & 0x0f;
-
         var s = mod.channel[ch].sampleindex;
         mod.channel[ch].voiceperiod = mod.calcperiod(mod, apn + mod.instrument[i].sample[s].relativenote, mod.instrument[i].sample[s].finetune);
         mod.channel[ch].flags |= 1;
