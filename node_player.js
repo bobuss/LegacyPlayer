@@ -6,6 +6,7 @@
 * Terms of Use: This software is licensed under a CC BY-NC-SA
 * (http://creativecommons.org/licenses/by-nc-sa/4.0/).
 */
+import debug from './lib/common.js';
 
 const SUPPORTED_PROCESSORS = ['sc68', 'openmpt', 'ahx', 'pt', 'ft2', 'st3', 'psgplay']
 
@@ -18,14 +19,16 @@ const FORMAT_PROCESSOR_MAPPING = {
     'ahx': 'ahx'
 }
 
+const timestamp = Date.now()
+
 const workletProcessorCodes = {
-    'ft2': ["lib/utils.js", "lib/ft2.js", "audioworklets/ft2_worklet_processor.js"],
-    'st3': ["lib/utils.js", "lib/st3.js", "audioworklets/st3_worklet_processor.js"],
-    'pt': ["lib/pt.js", "audioworklets/pt_worklet_processor.js"],
-    'ahx': ["lib/ahx.js", "audioworklets/ahx_worklet_processor.js"],
-    'openmpt': ["lib/libopenmpt.js", "audioworklets/openmpt_worklet_processor.js"],
-    'sc68': ["lib/sc68.js", "lib/sc68_backend_adapter.js", "audioworklets/sc68_worklet_processor.js"],
-    'psgplay': ["lib/psgplay.js", "audioworklets/psgplay_worklet_processor.js"],
+    'ft2': ["lib/common.js", "lib/utils.js", "lib/ft2.js", `audioworklets/ft2_worklet_processor.js?${timestamp}`],
+    'st3': ["lib/common.js", "lib/utils.js", "lib/st3.js", `audioworklets/st3_worklet_processor.js?${timestamp}`],
+    'pt': ["lib/common.js", "lib/pt.js", `audioworklets/pt_worklet_processor.js?${timestamp}`],
+    'ahx': ["lib/common.js", "lib/ahx.js", `audioworklets/ahx_worklet_processor.js?${timestamp}`],
+    'openmpt': ["lib/common.js", "lib/libopenmpt.js", `audioworklets/openmpt_worklet_processor.js?${timestamp}`],
+    'sc68': ["lib/common.js", "lib/sc68.js", "lib/sc68_backend_adapter.js", `audioworklets/sc68_worklet_processor.js?${timestamp}`],
+    'psgplay': ["lib/common.js", "lib/psgplay.js", `audioworklets/psgplay_worklet_processor.js?${timestamp}`],
 };
 
 // from https://github.com/padenot/ringbuf.js/blob/main/public/example/utils.js
@@ -78,10 +81,10 @@ export class NodePlayer {
     chvu = new Float32Array(32);
 
     // hooks
-    onPlayerReady = function () { console.log('onPlayerReady') }
-    onTrackReadyToPlay = function () { console.log('onTrackReadyToPlay') }
-    onTrackEnd = function () { console.log('onTrackEnd') }
-    onSongInfoUpdated = function () { console.log('onSongInfoUpdated') }
+    onPlayerReady = function () { debug('onPlayerReady') }
+    onTrackReadyToPlay = function () { debug('onTrackReadyToPlay') }
+    onTrackEnd = function () { debug('onTrackEnd') }
+    onSongInfoUpdated = function () { debug('onSongInfoUpdated') }
 
 
     constructor(audioContext) {
@@ -145,13 +148,12 @@ export class NodePlayer {
     async loadWorkletProcessor(processorName) {
 
         if (!processorName in SUPPORTED_PROCESSORS) {
-            console.log('Processor not supported')
+            debug('Processor not supported')
             return false
         } else {
 
             if (this.processors[processorName] === undefined) {
 
-                // const timestamp = Date.now()
                 // cross browser hack from
                 // https://mtg.github.io/essentia.js/docs/api/tutorial-2.%20Real-time%20analysis.html#using-the-web-audio-api-with-audioworklets
                 let concatenatedCode = await URLFromFiles(workletProcessorCodes[processorName])
@@ -171,9 +173,9 @@ export class NodePlayer {
 
                 this.processors[processorName] = audioWorkletNode,
 
-                    console.log('registered ' + processorName + '-worklet-processor')
+                    debug('registered ' + processorName + '-worklet-processor')
             } else {
-                console.log(processorName + '-worklet-processor already registered')
+                debug(processorName + '-worklet-processor already registered')
             }
         }
     }
@@ -305,23 +307,23 @@ export class NodePlayer {
         const status = this.loadMusicData(fullFilename, data);
 
         if (status < 0) {
-            console.log('Failed in loadMusicData')
+            debug('Failed in loadMusicData')
         } else if (status === 0) {
 
-            console.log("successfully completed init");
+            debug("successfully completed init");
 
             // in scenarios where a synchronous file-load is involved this first call will typically fail
             // but trigger the file load
             this.setTrack(track)
 
-            console.log('prepareTrackForPlayback succeded')
+            debug('prepareTrackForPlayback succeded')
             return true;
 
         } else {
             // error that cannot be resolved.. (e.g. file not exists)
-            console.log("prepareTrackForPlayback - fatal error");
+            debug("prepareTrackForPlayback - fatal error");
         }
-        console.log('prepareTrackForPlayback failed')
+        debug('prepareTrackForPlayback failed')
         return false;
     }
 

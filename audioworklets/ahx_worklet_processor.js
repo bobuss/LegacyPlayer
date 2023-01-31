@@ -41,7 +41,6 @@ class AHXWorkletProcessor extends AudioWorkletProcessor {
 
     constructor() {
         super();
-
         this.mixingBufferSize = Math.floor(this.sampleRate / 50);
         this.mixingBufferL = new Array(this.mixingBufferSize);
         this.mixingBufferR = new Array(this.mixingBufferSize);
@@ -54,7 +53,7 @@ class AHXWorkletProcessor extends AudioWorkletProcessor {
 
     onmessage(e) {
         const { data } = e;
-        console.log('onmessage ' + data.type)
+        debug('onmessage ' + data.type)
         switch (data.type) {
 
             case 'loadMusicData':

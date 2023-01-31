@@ -1,25 +1,20 @@
-# AudioWorklet port of sc68 player
+# Nostalic player
 
+Implementation using AudioWorklet: https://developer.mozilla.org/en-US/docs/Web/API/AudioWorklet
 
-Reimplementation using AudioWorklet: https://developer.mozilla.org/en-US/docs/Web/API/AudioWorklet
+Tested on Chrome and Firefox.
+Got some partial results on Safari.
+
 
 Supported backends:
 - **sc68**: sndh, sc68 (needs replay *.bin files)
 - **openmpt**: mptm mod s3m xm it 669 amf ams c67 dbm digi dmf dsm dsym dtm far fmt imf ice j2b m15 mdl med mms mt2 mtm mus nst okt plm psm pt36 ptm sfx sfx2 st26 stk stm stx stp symmod ult wow gdm mo3 oxm umx xpk ppm mmcmp
 - **ahx**: ahx
+- **ft2**: xm
+- **st3**: sm3
+- **pt**: mod
 
-Original work by by Juergen Wothke:
-- generic audio player: https://bitbucket.org/wothke/webaudio-player/src/master/
-- sc68 backend: https://bitbucket.org/wothke/sc68-2.2.1/src/master/
-  - emscripten worklet-compatible module from https://github.com/bobuss/sc68-2.2.1
-- openmpt backend: https://bitbucket.org/wothke/webmpt/src/master/
-  - emscripten worklet-compatible module built manually. Will push that on a repository, on day
-
-AHX backend by Bryc:
-- https://github.com/bryc/ahx-web-player
-
-Native javascript origin backends for Protracker, ScreamTracker3 and FastTracker 2 but electronoora:
-- https://github.com/electronoora/webaudio-mod-player
+Note: Openmpt backend gives the best results, but it does not support vumeters by channels.
 
 
 
@@ -52,6 +47,25 @@ loadsc68Button.addEventListener('click', async (e) => {
 
 
 
+## Inspirations
+
+Original work by by Juergen Wothke:
+- generic audio player: https://bitbucket.org/wothke/webaudio-player/src/master/
+- sc68 backend: https://bitbucket.org/wothke/sc68-2.2.1/src/master/
+  - emscripten worklet-compatible module from https://github.com/bobuss/sc68-2.2.1
+
+Emscripten worklet-compatible module built manually in worker mode. Will push that on a repository, maybe.
+Based on https://lib.openmpt.org/libopenmpt/
+
+AHX backend by Bryc:
+- https://github.com/bryc/ahx-web-player
+
+Native javascript origin backends for Protracker (pt), ScreamTracker3 (st3) and FastTracker 2 (ft2) by electronoora:
+- https://github.com/electronoora/webaudio-mod-player
+
+
+
+
+
 ## TODO
 - seek
-- debug mode to turn off/on debug message and audioWorklet addModule timestamp

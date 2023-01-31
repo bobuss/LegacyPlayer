@@ -32,7 +32,7 @@ class PTWorkletProcessor extends AudioWorkletProcessor {
 
     onmessage(e) {
         const { data } = e;
-        console.log('onmessage ' + data.type)
+        debug('onmessage ' + data.type)
         switch (data.type) {
 
             case 'loadMusicData':
