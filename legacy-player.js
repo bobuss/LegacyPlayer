@@ -7,7 +7,7 @@
 * (http://creativecommons.org/licenses/by-nc-sa/4.0/).
 */
 
-const SUPPORTED_PROCESSORS = ['sc68', 'openmpt', 'ahx', 'pt', 'ft2', 'st3', 'psgplay']
+const SUPPORTED_PROCESSORS = ['sc68', 'openmpt', 'ahx', 'pt', 'ft2', 'st3']
 
 const FORMAT_PROCESSOR_MAPPING = {
     'sc68': 'sc68',
@@ -23,7 +23,7 @@ const timestamp = Date.now()
 const workletProcessorCodes = {
     'ft2': ["lib/utils.js", "lib/ft2.js", `audioworklets/ft2_worklet_processor.js?${timestamp}`],
     'st3': ["lib/utils.js", "lib/st3.js", `audioworklets/st3_worklet_processor.js?${timestamp}`],
-    'pt': [`lib/pt.js?${timestamp}`, `audioworklets/pt_worklet_processor.js?${timestamp}`],
+    'pt': [`lib/pt.js`, `audioworklets/pt_worklet_processor.js?${timestamp}`],
     'ahx': ["lib/ahx.js", `audioworklets/ahx_worklet_processor.js?${timestamp}`],
     'openmpt': ["lib/libopenmpt.js", `audioworklets/openmpt_worklet_processor.js?${timestamp}`],
     'sc68': ["lib/sc68.js", "lib/sc68_backend_adapter.js", `audioworklets/sc68_worklet_processor.js?${timestamp}`],
@@ -45,7 +45,7 @@ function URLFromFiles(files) {
 }
 
 
-export class NodePlayer {
+export class LegacyPlayer {
 
     spectrumEnabled = false
     scopes = [];
@@ -139,13 +139,6 @@ export class NodePlayer {
 
     get masterNode() {
         return this.mainGain
-    }
-
-
-    connect(gainNode, scope) {
-        const analyser = scope.createAnalyser(this.audioContext)
-        gainNode.connect(analyser)
-        this.scopes.push(scope)
     }
 
 
@@ -528,21 +521,6 @@ export class NodePlayer {
 
     addScope(scope) {
         scope.register_player(this)
-        this.scopes.push(scope)
-    }
-
-    addScopeToMain(scope) {
-        scope.register_analyser(this.mainAnalyser)
-        this.scopes.push(scope)
-    }
-
-    addScopeToLeftChannel(scope) {
-        scope.register_analyser(this.leftAnalyser)
-        this.scopes.push(scope)
-    }
-
-    addScopeToRightChannel(scope) {
-        scope.register_analyser(this.rightAnalyser)
         this.scopes.push(scope)
     }
 

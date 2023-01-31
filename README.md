@@ -21,13 +21,13 @@ Note: Openmpt backend gives the best results, but it does not support vumeters b
 ## How to use
 
 ```javascript
-import { NodePlayer } from './node_player.js';
+import { LegacyPlayer } from './legacy_player.js';
 
 const songUrl = 'http://modland.com/pub/modules/SNDH/Jochen%20Hippel/wings%20of%20death.sndh'
 
 const audioContext = new (window.AudioContext || window.webkitAudioContext)();
 
-const player = new NodePlayer(audioContext)
+const player = new LegacyPlayer(audioContext)
 await player.loadWorkletProcessor('sc68')
 await player.loadWorkletProcessor('openmpt')
 

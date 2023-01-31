@@ -1,7 +1,6 @@
 
-import { VisuBase } from './visu_base.js'
 
-export class Scope extends VisuBase {
+export class Scope {
 
     width = 200
     height = 200
@@ -12,12 +11,25 @@ export class Scope extends VisuBase {
     smoothingTimeConstant = 0.85;
 
     constructor(canvas) {
-        super(canvas)
         this.canvas = canvas;
         this.canvasCtx = this.canvas.getContext('2d');
         this.canvas.width = this.width
         this.canvas.height = this.height
         this.fftSize = this.fftSize
+    }
+
+    createAnalyser(audioCtx) {
+        const analyser = audioCtx.createAnalyser();
+        analyser.minDecibels = this.minDecibels
+        analyser.maxDecibels = this.maxDecibels
+        analyser.fftSize = this.fftSize
+        analyser.smoothingTimeConstant = this.smoothingTimeConstant
+        return analyser
+    }
+
+    register_player(player) {
+        this.analyser = this.createAnalyser(player.audioContext)
+        player.masterNode.connect(this.analyser)
     }
 
     render() {

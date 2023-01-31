@@ -1,7 +1,5 @@
 
-import { VisuBase } from './visu_base.js'
-
-export class Spectrum extends VisuBase{
+export class Spectrum {
 
     width = 200
     height = 200
@@ -11,8 +9,9 @@ export class Spectrum extends VisuBase{
     fftSize = 4096
     smoothingTimeConstant = 0.85;
 
+    analyser;
+
     constructor(canvas) {
-        super(canvas)
         this.canvas = canvas;
         this.canvasCtx = this.canvas.getContext('2d');
         this.canvas.width = this.width
@@ -20,9 +19,23 @@ export class Spectrum extends VisuBase{
         this.fftSize = this.fftSize
     }
 
+    createAnalyser(audioCtx) {
+        const analyser = audioCtx.createAnalyser();
+        analyser.minDecibels = this.minDecibels
+        analyser.maxDecibels = this.maxDecibels
+        analyser.fftSize = this.fftSize
+        analyser.smoothingTimeConstant = this.smoothingTimeConstant
+        return this.analyser
+    }
+
+    register_player(player) {
+        this.analyser = this.createAnalyser(player.audioContext)
+        player.masterNode.connect(this.analyser)
+    }
+
     render() {
 
-        if ( this.analyser ) {
+        if (this.analyser) {
 
             const bufferLength = this.analyser.frequencyBinCount;
             const dataArray = new Uint8Array(bufferLength);

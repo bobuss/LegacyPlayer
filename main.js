@@ -1,8 +1,8 @@
-import { NodePlayer } from './node_player.js';
-import { Spectrum } from './visu_spectrum.js'
-import { VuMeter } from './visu_vumeter.js'
-import { Scope } from './visu_scope.js'
-import { VoiceMeter } from './visu_voice_meter.js';
+import { LegacyPlayer } from './legacy-player.js';
+import { Spectrum } from './visualisations/spectrum.js'
+import { StereoVuMeter } from './visualisations/stereo-vumeter.js'
+import { Scope } from './visualisations/scope.js'
+import { VoiceMeter } from './visualisations/voice-meter.js';
 
 const songUrlMPT = 'http://modland.com/pub/modules/Fasttracker%202/Jugi/onward%20(party%20version).xm'
 const songUrlPT = 'http://modland.com/pub/modules/Soundtracker/Karsten%20Obarski/amegas.mod'
@@ -16,19 +16,15 @@ const songUrlST3 = 'http://modland.com/pub/modules/Screamtracker%203/Skaven/2nd%
 
 const audioContext = new (window.AudioContext || window.webkitAudioContext)();
 
-const player = new NodePlayer(audioContext)
+const player = new LegacyPlayer(audioContext)
 
-const vuMeterLCanvas = document.getElementById('vuMeterL')
-const scope1 = new VuMeter(vuMeterLCanvas)
-player.connect(player.leftNode, scope1)
-
-const vuMeterRCanvas = document.getElementById('vuMeterR')
-const scope2 = new VuMeter(vuMeterRCanvas)
-player.connect(player.rightNode, scope2)
+const vuMeterCanvas = document.getElementById('vuMeter')
+const scope1 = new StereoVuMeter(vuMeterCanvas)
+player.addScope(scope1)
 
 const canvas3 = document.getElementById('visualizer3')
 const scope3 = new Scope(canvas3)
-player.connect(player.masterNode, scope3)
+player.addScope(scope3)
 
 const canvas4 = document.getElementById('voices')
 const voices = new VoiceMeter(canvas4)
@@ -46,7 +42,7 @@ await player.loadWorkletProcessor('st3')
 await player.loadWorkletProcessor('psgplay')
 
 player.onSongInfoUpdated = function() {
-    const e1 = document.getElementById('info')
+    const e1 = document.getElementById('song-info')
     e1.innerHTML = JSON.stringify(this.songInfo, undefined, 2)
     if (this.songInfo['duration'] !== undefined) {
         const el = document.getElementById('duration')

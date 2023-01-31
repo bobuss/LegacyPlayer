@@ -34,9 +34,8 @@ button {
     --volume-before-width: 100%;
     --buffered-width: 0%;
     position: relative;
-    margin: 100px 2.5% auto 2.5%;
+    margin: 20px 2.5% 20px 2.5%;
     width: 95%;
-    max-width: 500px;
     height: 250px;
     background: #fff;
 }
@@ -51,6 +50,31 @@ button {
     background: linear-gradient(to left, #007db5, #ff8a00);
     z-index: -1;
 }
+
+#song-info {
+    position: relative;
+    margin: 20px 2.5% 20px 2.5%;
+    width: 95%;
+    height: 150px;
+    background: #fff;
+}
+
+#visualisations {
+    position: relative;
+    margin: 20px 2.5% 20px 2.5%;
+    width: 95%;
+    height: 250px;
+    background: #fff;
+    display: flex;
+    justify-content: center;
+}
+
+.visu {
+    width: 20%;
+
+}
+
+
 
 p {
     position: absolute;
