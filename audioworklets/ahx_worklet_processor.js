@@ -67,14 +67,6 @@ class AHXWorkletProcessor extends AudioWorkletProcessor {
                 }
                 break;
 
-            case 'evalTrackOptions':
-                // not implemented
-                break;
-
-            case 'resetSampleRate':
-                //
-                break;
-
             case 'play':
                 this.isPaused = false;
                 break;
@@ -83,12 +75,9 @@ class AHXWorkletProcessor extends AudioWorkletProcessor {
                 this.isPaused = true;
                 break;
 
-            case 'registerFileData':
-                //this.backendAdapter.registerFileData(data.name, data.payload)
-                break;
-
             case 'setTrack':
-                // not implemented
+                // track number start at 0
+                this.Player.InitSubsong(data.track - 1)
                 break;
 
             case 'setStereoSeparation':
@@ -106,14 +95,23 @@ class AHXWorkletProcessor extends AudioWorkletProcessor {
         this.filename = filename
         const song = new AHXSong(data)
         this.Player = new AHXPlayer(song)
-        this.Player.InitSubsong(0)
         return true
     }
 
 
     updateSongInfo() {
         const data = {
-            'title': this.Player.Song.Name
+            'title': this.Player.Song.Name,
+            'numberOfTracks': this.Player.Song.SubsongNr + 1,
+            'restart': this.Player.Song.Restart,
+            'positionNr': this.Player.Song.PositionNr,
+            'trackLength': this.Player.Song.TrackLength,
+            'trackNr': this.Player.Song.TrackNr,
+            'instrumentNr': this.Player.Song.InstrumentNr,
+            'subsongNr': this.Player.Song.SubsongNr,
+            'revision': this.Player.Song.Revision,
+            'speedMultiplier': this.Player.Song.SpeedMultiplier,
+            'instruments': this.Player.Song.Instruments.map(x => x.Name)
         };
         return data;
     }
@@ -171,6 +169,13 @@ class AHXWorkletProcessor extends AudioWorkletProcessor {
         const nrSamples = Math.floor(this.mixingBufferSize / this.Player.Song.SpeedMultiplier);
         for (let f = 0; f < this.Player.Song.SpeedMultiplier; f++) {
             this.Player.PlayIRQ();
+
+            if (this.Player.SongEndReached && this.playing) {
+                this.port.postMessage({
+                    type: 'onTrackEnd'
+                });
+            }
+
             mb = this.mixChunk(nrSamples, mb);
         } // frames
     }

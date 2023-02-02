@@ -9,9 +9,9 @@ const songUrlPT = 'http://modland.com/pub/modules/Soundtracker/Karsten%20Obarski
 const songUrlPT2 = 'dope.mod'
 const songUrlSC68 = 'http://modland.com/pub/modules/SC68/Jochen%20Hippel/wings%20of%20death%20-%20title.sc68'
 const songUrlSNDH = 'http://modland.com/pub/modules/SNDH/Jochen%20Hippel/enchanted%20land.sndh'
-const songUrlAHX = 'http://modland.com/pub/modules/AHX/AceMan/arrrr!ghwblwubwubwub.ahx'
+const songUrlAHX = 'http://modland.com/pub/modules/AHX/Android/axel%20f%20-%20the%20remodel.ahx'
 const songUrlST3 = 'http://modland.com/pub/modules/Screamtracker%203/Skaven/2nd%20reality.s3m'
-
+// const songUrlPSG = 'There_Are_No_Sheep.sndh'
 
 
 const audioContext = new (window.AudioContext || window.webkitAudioContext)();
@@ -65,12 +65,10 @@ loadPTButton.addEventListener('click', async (e) => {
     await player.load(songUrlPT)
 });
 
-
 const loadPTButton2 = document.getElementById('loadpt2');
 loadPTButton2.addEventListener('click', async (e) => {
     await player.load(songUrlPT2)
 });
-
 
 const loadSNDHButton = document.getElementById('loadsndh');
 loadSNDHButton.addEventListener('click', async (e) => {
@@ -84,9 +82,13 @@ loadsc68Button.addEventListener('click', async (e) => {
 
 const loadAHXButton = document.getElementById('loadahx');
 loadAHXButton.addEventListener('click', async (e) => {
-    await player.load(songUrlAHX);
+    await player.load(songUrlAHX, {track:2});
 });
 
+// const loadPSGButton = document.getElementById('loadpsg');
+// loadPSGButton.addEventListener('click', async (e) => {
+//     await player.load(songUrlPSG, {"processor": 'psgplay'});
+// });
 
 
 

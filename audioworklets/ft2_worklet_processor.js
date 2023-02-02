@@ -39,6 +39,13 @@ class FT2WorkletProcessor extends AudioWorkletProcessor {
 
             case 'loadMusicData':
                 this.isSongReady = this.loadMusicData(data.sampleRate, data.path, data.filename, data.data, data.options)
+                if (this.isSongReady) {
+                    this.songInfo = this.updateSongInfo(data.filename)
+                    this.port.postMessage({
+                        type: 'songInfoUpdated',
+                        songInfo: this.songInfo
+                    });
+                }
                 break;
 
             case 'play':
@@ -65,39 +72,38 @@ class FT2WorkletProcessor extends AudioWorkletProcessor {
         this.filename = filename
         this.player.clearsong();
         if (this.player.parse(data)) {
-            // copy static data from player
-            this.songInfo = {
-                'title': this.player.title,
-                'signature': this.player.signature,
-                'songlen': this.player.songlen,
-                'channels': this.player.channels,
-                'patterns': this.player.patterns,
-                'filter': this.player.filter,
-                'mixval': this.player.mixval // usually 8.0, though
-            }
-
-            const samplenames = new Array(32)
-            for (let i = 0; i < 32; i++)
-                samplenames[i] = "";
-
-            if (this.format == 'xm' || this.format == 'it') {
-                for (let i = 0; i < this.player.instrument.length; i++) samplenames[i] = this.player.instrument[i].name;
-            } else {
-                for (let i = 0; i < this.player.sample.length; i++) samplenames[i] = this.player.sample[i].name;
-            }
-            this.songInfo['samplenames'] = samplenames
-
-
-            this.port.postMessage({
-                type: 'songInfoUpdated',
-                songInfo: this.songInfo
-            });
-
             this.isSongReady = true
             this.loading = false;
         }
 
         return true
+    }
+
+    updateSongInfo() {
+        let data = {};
+        // copy static data from player
+        data = {
+            'title': this.player.title,
+            'signature': this.player.signature,
+            'songlen': this.player.songlen,
+            'channels': this.player.channels,
+            'patterns': this.player.patterns,
+            'filter': this.player.filter,
+            'mixval': this.player.mixval // usually 8.0, though
+        }
+
+        const samplenames = new Array(32)
+        for (let i = 0; i < 32; i++)
+            samplenames[i] = "";
+
+        if (this.format == 'xm' || this.format == 'it') {
+            for (let i = 0; i < this.player.instrument.length; i++) samplenames[i] = this.player.instrument[i].name;
+        } else {
+            for (let i = 0; i < this.player.sample.length; i++) samplenames[i] = this.player.sample[i].name;
+        }
+        data['samplenames'] = samplenames
+
+        return data;
     }
 
     process(inputs, outputs) {

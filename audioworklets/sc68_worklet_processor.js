@@ -64,14 +64,8 @@ class SC68WorkletProcessor extends AudioWorkletProcessor {
         switch (data.type) {
 
             case 'loadMusicData':
+                this.songInfo = {}
                 this.isSongReady = (this.backendAdapter.loadMusicData(data.sampleRate, data.path, data.filename, data.data, data.options) == 0)
-                if (this.isSongReady) {
-                    this.songInfo = this.backendAdapter.updateSongInfo(data.filename)
-                    this.port.postMessage({
-                        type: 'songInfoUpdated',
-                        songInfo: this.songInfo
-                    });
-                }
                 break;
 
             case 'evalTrackOptions':
@@ -95,7 +89,14 @@ class SC68WorkletProcessor extends AudioWorkletProcessor {
                 break;
 
             case 'setTrack':
-                this.backendAdapter.evalTrackOptions({track: data.track})
+                this.backendAdapter.evalTrackOptions({track: data.track - 1})
+                if (this.isSongReady) {
+                    this.songInfo = this.backendAdapter.updateSongInfo(data.filename)
+                    this.port.postMessage({
+                        type: 'songInfoUpdated',
+                        songInfo: this.songInfo
+                    });
+                }
                 break;
 
         }

@@ -7,9 +7,9 @@
 * (http://creativecommons.org/licenses/by-nc-sa/4.0/).
 */
 
-const SUPPORTED_PROCESSORS = ['sc68', 'openmpt', 'ahx', 'pt', 'ft2', 'st3']
+const SUPPORTED_PROCESSORS = ['sc68', 'openmpt', 'ahx', 'pt', 'ft2', 'st3'] //, 'psgplay']
 
-const FORMAT_PROCESSOR_MAPPING = {
+const DEFAULT_FORMAT_PROCESSOR_MAPPING = {
     'sc68': 'sc68',
     'sndh': 'sc68',
     's3m': 'st3',
@@ -24,10 +24,10 @@ const workletProcessorCodes = {
     'ft2': ["lib/utils.js", "lib/ft2.js", `audioworklets/ft2_worklet_processor.js?${timestamp}`],
     'st3': ["lib/utils.js", "lib/st3.js", `audioworklets/st3_worklet_processor.js?${timestamp}`],
     'pt': [`lib/pt.js`, `audioworklets/pt_worklet_processor.js?${timestamp}`],
-    'ahx': ["lib/ahx.js", `audioworklets/ahx_worklet_processor.js?${timestamp}`],
+    'ahx': [`lib/ahx.js?${timestamp}`, `audioworklets/ahx_worklet_processor.js?${timestamp}`],
     'openmpt': ["lib/libopenmpt.js", `audioworklets/openmpt_worklet_processor.js?${timestamp}`],
     'sc68': ["lib/sc68.js", "lib/sc68_backend_adapter.js", `audioworklets/sc68_worklet_processor.js?${timestamp}`],
-    'psgplay': ["lib/psgplay.js", `audioworklets/psgplay_worklet_processor.js?${timestamp}`],
+    //'psgplay': [`lib/libpsgplay.js?${timestamp}`, `audioworklets/psgplay_worklet_processor.js?${timestamp}`],
 };
 
 // from https://github.com/padenot/ringbuf.js/blob/main/public/example/utils.js
@@ -151,11 +151,14 @@ export class LegacyPlayer {
 
             if (this.processors[processorName] === undefined) {
 
-                // cross browser hack from
-                // https://mtg.github.io/essentia.js/docs/api/tutorial-2.%20Real-time%20analysis.html#using-the-web-audio-api-with-audioworklets
-                let concatenatedCode = await URLFromFiles(workletProcessorCodes[processorName])
-                await this.audioContext.audioWorklet.addModule(concatenatedCode);
-                // await this.audioContext.audioWorklet.addModule(`audioworklets/${processorName}_worklet_processor.js?${timestamp}`)
+                if (workletProcessorCodes[processorName] !== undefined) {
+                    // cross browser hack from
+                    // https://mtg.github.io/essentia.js/docs/api/tutorial-2.%20Real-time%20analysis.html#using-the-web-audio-api-with-audioworklets
+                    let concatenatedCode = await URLFromFiles(workletProcessorCodes[processorName])
+                    await this.audioContext.audioWorklet.addModule(concatenatedCode);
+                } else {
+                    await this.audioContext.audioWorklet.addModule(`audioworklets/${processorName}_worklet_processor.js?${timestamp}`)
+                }
 
                 const audioWorkletNode = new AudioWorkletNode(
                     this.audioContext,
@@ -168,9 +171,9 @@ export class LegacyPlayer {
                 audioWorkletNode.port.onmessage = this.onmessage.bind(this);
                 audioWorkletNode.port.start()
 
-                this.processors[processorName] = audioWorkletNode,
+                this.processors[processorName] = audioWorkletNode;
 
-                    console.log('registered ' + processorName + '-worklet-processor')
+                console.log('registered ' + processorName + '-worklet-processor')
             } else {
                 console.log(processorName + '-worklet-processor already registered')
             }
@@ -251,17 +254,17 @@ export class LegacyPlayer {
 
         if (options.processor === undefined) {
             let ext = url.split('.').pop().toLowerCase().trim();
-            if (FORMAT_PROCESSOR_MAPPING[ext] === undefined) {
+            if (DEFAULT_FORMAT_PROCESSOR_MAPPING[ext] === undefined) {
                 // unknown extension, maybe amiga-style prefix?
                 ext = url.split('/').pop().split('.').shift().toLowerCase().trim();
-                if (FORMAT_PROCESSOR_MAPPING[ext] === undefined) {
+                if (DEFAULT_FORMAT_PROCESSOR_MAPPING[ext] === undefined) {
                     // ok, give up
                     return false;
                 }
             }
             this.format = ext;
 
-            this.selectWorkletProcessor(FORMAT_PROCESSOR_MAPPING[ext])
+            this.selectWorkletProcessor(DEFAULT_FORMAT_PROCESSOR_MAPPING[ext])
         } else {
             this.selectWorkletProcessor(options.processor)
         }
