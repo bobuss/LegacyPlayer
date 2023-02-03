@@ -37,6 +37,7 @@ class AHXWorkletProcessor extends AudioWorkletProcessor {
     isSongReady = false;    // initialized (including file-loads that might have been necessary)
 
     publishChannelVU = true
+    publishSongPosition = true
 
 
     constructor() {
@@ -85,7 +86,7 @@ class AHXWorkletProcessor extends AudioWorkletProcessor {
                 break;
 
             case 'seek':
-
+                this.Player.Seek(Math.floor(data.position))
                 break
 
         }
@@ -116,10 +117,6 @@ class AHXWorkletProcessor extends AudioWorkletProcessor {
         return data;
     }
 
-
-    seek(position) {
-
-    }
 
     setStereoSeparation(stereoSeparation) {
         stereoSeparation = Math.max(0, stereoSeparation)
@@ -169,6 +166,13 @@ class AHXWorkletProcessor extends AudioWorkletProcessor {
         const nrSamples = Math.floor(this.mixingBufferSize / this.Player.Song.SpeedMultiplier);
         for (let f = 0; f < this.Player.Song.SpeedMultiplier; f++) {
             this.Player.PlayIRQ();
+
+            if (this.publishSongPosition) {
+                this.port.postMessage({
+                    'type': 'songPositionUpdated',
+                    'position': this.Player.PosNr
+                })
+            }
 
             if (this.Player.SongEndReached && this.playing) {
                 this.port.postMessage({

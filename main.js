@@ -43,19 +43,24 @@ function formatTime(time) {
 
 // seek
 const slider = document.getElementById('seek-slider')
+const currentTime = document.getElementById('current-time')
 slider.addEventListener('input', (e) => {
     slider.block = true;
 })
 slider.addEventListener('change', (e) => {
     e.preventDefault()
     slider.block = false;
-    const el = document.getElementById('current-time')
-    el.innerHTML = formatTime(e.target.value)
+    currentTime.innerHTML = formatTime(e.target.value)
     player.seek(e.target.value);
 })
 player.onSongPositionUpdated = function() {
-    const el = document.getElementById('current-time')
-    el.innerHTML = formatTime(this.position)
+    if (this.songInfo['duration'] !== undefined) {
+        currentTime.innerHTML = formatTime(this.position)
+    } else if (this.songInfo['positionNr'] !== undefined) {
+        currentTime.innerHTML = this.position
+    } else {
+        currentTime.innerHTML = 'N/A'
+    }
     if (!slider.block)
         slider.value = this.position
 }
@@ -68,11 +73,20 @@ player.onSongInfoUpdated = function () {
     const slider = document.getElementById('seek-slider')
     if (this.songInfo['duration'] !== undefined) {
         el.innerHTML = formatTime(this.songInfo['duration'])
+        currentTime.innerHTML = '0:00'
         slider.max = this.songInfo['duration']
         slider.step = 0.1
+    } else if (this.songInfo['positionNr'] !== undefined) {
+        el.innerHTML = this.songInfo['positionNr']
+        currentTime.innerHTML = '0'
+        slider.max = this.songInfo['positionNr']
+        slider.step = 1
     } else {
+        currentTime.innerHTML = 'N/A'
         el.innerHTML = 'N/A'
     }
+    if (!slider.block)
+        slider.value = 0
 }
 
 const loadFT2Button = document.getElementById('loadft2');
