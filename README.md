@@ -23,24 +23,29 @@ Note: Openmpt backend gives the best results, but it does not support vumeters b
 ```javascript
 import { LegacyPlayer } from './legacy_player.js';
 
-const songUrl = 'http://modland.com/pub/modules/SNDH/Jochen%20Hippel/wings%20of%20death.sndh'
+const songUrlSC68 = 'http://modland.com/pub/modules/SNDH/Jochen%20Hippel/wings%20of%20death.sndh'
+const songUrlFT2 = 'http://modland.com/pub/modules/Fasttracker%202/Jugi/onward%20(party%20version).xm'
 
 const audioContext = new (window.AudioContext || window.webkitAudioContext)();
 
 const player = new LegacyPlayer(audioContext)
-await player.loadWorkletProcessor('sc68')
-await player.loadWorkletProcessor('openmpt')
-
-const loadmptButton = document.getElementById('loadmpt');
-loadmptButton.addEventListener('click', async (e) => {
-    await player.load(songUrlMPT);
-    player.play()
-});
 
 const loadsc68Button = document.getElementById('loadsc68');
 loadsc68Button.addEventListener('click', async (e) => {
     await player.load(songUrlSC68);
     player.play()
+});
+
+// by default xm files are played with ft2 backend
+const loadFT2Button = document.getElementById('loadft2');
+loadFT2Button.addEventListener('click', async (e) => {
+    await player.load(songUrlFT2);
+});
+
+// you can force to use openmpt instead
+const loadFT2WithMTPButton = document.getElementById('loadft2withmpt');
+loadFT2WithMTPButton.addEventListener('click', async (e) => {
+    await player.load(songUrlFT2, {"processor": 'openmpt'});
 });
 
 ```

@@ -181,12 +181,13 @@ export class LegacyPlayer {
     }
 
 
-    selectWorkletProcessor(processorName) {
-        if (SUPPORTED_PROCESSORS.indexOf(this.processorName) != -1 && this.processorName in this.processors) {
+    async selectWorkletProcessor(processorName) {
+        if (this.processorName != null) {
             // stop and unplug the current worklet processor
             this.pause()
             this.audioWorkletNode.disconnect(this.splitter)
         }
+        await this.loadWorkletProcessor(processorName)
         this.processorName = processorName
         this.audioWorkletNode.connect(this.splitter)
         console.log(`"${processorName}" processor loaded`)
@@ -264,12 +265,12 @@ export class LegacyPlayer {
             }
             this.format = ext;
 
-            this.selectWorkletProcessor(DEFAULT_FORMAT_PROCESSOR_MAPPING[ext])
+            await this.selectWorkletProcessor(DEFAULT_FORMAT_PROCESSOR_MAPPING[ext])
         } else {
-            this.selectWorkletProcessor(options.processor)
+            await this.selectWorkletProcessor(options.processor)
         }
 
-        await fetch(url)
+        await fetch(encodeURIComponent(url))
             .then(response => {
                 if (!response.ok) {
                     throw new Error(response.status);

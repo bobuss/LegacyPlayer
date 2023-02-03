@@ -32,15 +32,6 @@ player.addScope(voices)
 
 player.enableSpectrum();
 
-
-await player.loadWorkletProcessor('sc68')
-await player.loadWorkletProcessor('openmpt')
-await player.loadWorkletProcessor('ahx')
-await player.loadWorkletProcessor('pt')
-await player.loadWorkletProcessor('ft2')
-await player.loadWorkletProcessor('st3')
-await player.loadWorkletProcessor('psgplay')
-
 player.onSongInfoUpdated = function() {
     const e1 = document.getElementById('song-info')
     e1.innerHTML = JSON.stringify(this.songInfo, undefined, 2)
