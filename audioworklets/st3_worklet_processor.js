@@ -46,20 +46,18 @@ class ST3WorkletProcessor extends AudioWorkletProcessor {
                         songInfo: this.songInfo
                     });
                 }
+                this.endofsong = false;
+                this.player.initialize();
+                this.player.flags = 1 + 2;
+                this.player.playing = true;
+                this.player.paused = false;
+                this.isPaused = true;
+                this.chvu = new Float32Array(this.player.channels);
+                for (let i = 0; i < this.player.channels; i++) this.chvu[i] = 0.0;
                 break;
 
             case 'play':
                 this.isPaused = false;
-                this.endofsong = false;
-                this.player.endofsong = false;
-                this.player.paused = false;
-                this.player.initialize();
-                this.player.flags = 1 + 2;
-                this.player.playing = true;
-                this.playing = true;
-
-                this.chvu = new Float32Array(this.player.channels);
-                for (let i = 0; i < this.player.channels; i++) this.chvu[i] = 0.0;
                 break;
 
             case 'pause':
@@ -176,7 +174,7 @@ class ST3WorkletProcessor extends AudioWorkletProcessor {
             //    this.setfilter(this.player.filter);
             //}
 
-            if (this.endofsong && this.playing) {
+            if (this.endofsong) {
                 this.isPaused = true;  // stop playback (or this will retrigger again and again before new song is started)
                 this.port.postMessage({
                     type: 'onTrackEnd'
