@@ -13,6 +13,7 @@ class ST3WorkletProcessor extends AudioWorkletProcessor {
     mixval = 8.0;
     chvu = new Float32Array(32);
     publishChannelVU = true
+    publishSongPosition = true
     stereoSeparation = 100; // from 0 (mono) to 200 (original full separation)
 
     // container for song infos like: name, author, etc
@@ -64,6 +65,10 @@ class ST3WorkletProcessor extends AudioWorkletProcessor {
             case 'pause':
                 this.isPaused = true;
                 break;
+
+            case 'seek':
+                this.seek(data.position);
+                break;
         }
     }
 
@@ -81,13 +86,26 @@ class ST3WorkletProcessor extends AudioWorkletProcessor {
         return true
     }
 
+    seek(position) {
+        if (this.player) {
+            this.player.tick=0;
+            this.player.row=0;
+            this.player.position=position;
+            this.player.flags=1+2;
+            if (this.player.position<0) this.player.position=0;
+            if (this.player.position >= this.player.songlen) this.stop();
+        }
+        this.position=this.player.position;
+        this.row=this.player.row;
+    }
+
     updateSongInfo() {
         let data = {};
         // copy static data from player
         data = {
             'title': this.player.title,
             'signature': this.player.signature,
-            'songlen': this.player.songlen,
+            'positionNr': this.player.songlen,
             'channels': this.player.channels,
             'patterns': this.player.patterns,
             'filter': this.player.filter,
@@ -172,6 +190,13 @@ class ST3WorkletProcessor extends AudioWorkletProcessor {
             for (var i = 0; i < this.player.channels; i++) {
                 this.chvu[i] = this.chvu[i] * 0.25 + this.player.chvu[i] * 0.75;
                 this.player.chvu[i] = 0.0;
+            }
+
+            if (this.publishSongPosition) {
+                this.port.postMessage({
+                    'type': 'songPositionUpdated',
+                    'position': this.player.position
+                })
             }
 
             if (this.publishChannelVU) {

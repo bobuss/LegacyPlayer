@@ -22,7 +22,7 @@ const timestamp = Date.now()
 
 const workletProcessorCodes = {
     'ft2': ["lib/utils.js", "lib/ft2.js", `audioworklets/ft2_worklet_processor.js?${timestamp}`],
-    'st3': ["lib/utils.js", "lib/st3.js", `audioworklets/st3_worklet_processor.js?${timestamp}`],
+    'st3': ["lib/utils.js", `lib/st3.js?${timestamp}`, `audioworklets/st3_worklet_processor.js?${timestamp}`],
     'pt': [`lib/pt.js?${timestamp}`, `audioworklets/pt_worklet_processor.js?${timestamp}`],
     'ahx': [`lib/ahx.js?${timestamp}`, `audioworklets/ahx_worklet_processor.js?${timestamp}`],
     'openmpt': ["lib/libopenmpt.js", `audioworklets/openmpt_worklet_processor.js?${timestamp}`],

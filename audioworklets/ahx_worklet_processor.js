@@ -167,13 +167,6 @@ class AHXWorkletProcessor extends AudioWorkletProcessor {
         for (let f = 0; f < this.Player.Song.SpeedMultiplier; f++) {
             this.Player.PlayIRQ();
 
-            if (this.publishSongPosition) {
-                this.port.postMessage({
-                    'type': 'songPositionUpdated',
-                    'position': this.Player.PosNr
-                })
-            }
-
             if (this.Player.SongEndReached && this.playing) {
                 this.port.postMessage({
                     type: 'onTrackEnd'
@@ -182,6 +175,13 @@ class AHXWorkletProcessor extends AudioWorkletProcessor {
 
             mb = this.mixChunk(nrSamples, mb);
         } // frames
+
+        if (this.publishSongPosition) {
+            this.port.postMessage({
+                'type': 'songPositionUpdated',
+                'position': this.Player.PosNr
+            })
+        }
     }
 
     process(inputs, outputs) {
