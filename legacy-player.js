@@ -23,7 +23,7 @@ const timestamp = Date.now()
 const workletProcessorCodes = {
     'ft2': ["lib/utils.js", "lib/ft2.js", `audioworklets/ft2_worklet_processor.js?${timestamp}`],
     'st3': ["lib/utils.js", "lib/st3.js", `audioworklets/st3_worklet_processor.js?${timestamp}`],
-    'pt': [`lib/pt.js`, `audioworklets/pt_worklet_processor.js?${timestamp}`],
+    'pt': [`lib/pt.js?${timestamp}`, `audioworklets/pt_worklet_processor.js?${timestamp}`],
     'ahx': [`lib/ahx.js?${timestamp}`, `audioworklets/ahx_worklet_processor.js?${timestamp}`],
     'openmpt': ["lib/libopenmpt.js", `audioworklets/openmpt_worklet_processor.js?${timestamp}`],
     'sc68': ["lib/sc68.js", "lib/sc68_backend_adapter.js", `audioworklets/sc68_worklet_processor.js?${timestamp}`],
@@ -84,6 +84,7 @@ export class LegacyPlayer {
     onTrackReadyToPlay = function () { console.log('onTrackReadyToPlay') }
     onTrackEnd = function () { console.log('onTrackEnd') }
     onSongInfoUpdated = function () { console.log('onSongInfoUpdated') }
+    onSongPositionUpdated = function() {}
 
 
     constructor(audioContext) {
@@ -242,6 +243,11 @@ export class LegacyPlayer {
             case 'chvu':
                 this.chvu = data.chvu
                 break;
+
+            case 'songPositionUpdated':
+                this.position = data.position
+                this.onSongPositionUpdated()
+                break
 
         }
     }
@@ -428,13 +434,13 @@ export class LegacyPlayer {
     }
 
 
-    /**
-    * Move playback to 'pos': must be between 0 and getMaxSeekPosition()
-    * Return: 0 if successful
-    * * TODO: use worklet
-    */
-    seekPlaybackPosition(pos) {
-        //return this.backendAdapter.seekPlaybackPosition(pos);
+    seek(position) {
+        if (this.audioWorkletNode) {
+            this.audioWorkletNode.port.postMessage({
+                type: 'seek',
+                position: position
+            })
+        }
     }
 
     setStereoSeparation(stereoSeparation) {

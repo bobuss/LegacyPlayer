@@ -89,6 +89,7 @@ class PTWorkletProcessor extends AudioWorkletProcessor {
         // copy static data from player
         data = {
             'title': this.player.title,
+            'duration': this.player.total_time(),
             'signature': this.player.signature,
             'songlen': this.player.songlen,
             'channels': this.player.channels,
@@ -146,8 +147,8 @@ class PTWorkletProcessor extends AudioWorkletProcessor {
                 // apply stero separation
                 const thissampleL = outp[0]
                 const thissampleR = outp[1]
-                outp[0] =  thissampleL + ( 1 - (this.stereoSeparation / 200)) * thissampleR
-                outp[1] =  thissampleR + ( 1 - (this.stereoSeparation / 200)) * thissampleL
+                outp[0] = thissampleL + (1 - (this.stereoSeparation / 200)) * thissampleR
+                outp[1] = thissampleR + (1 - (this.stereoSeparation / 200)) * thissampleL
 
                 // scale down and soft clip
                 outp[0] /= this.mixval; outp[0] = 0.5 * (Math.abs(outp[0] + 0.975) - Math.abs(outp[0] - 0.975));

@@ -18,6 +18,8 @@ const audioContext = new (window.AudioContext || window.webkitAudioContext)();
 
 const player = new LegacyPlayer(audioContext)
 
+// Visualisations
+
 const vuMeterCanvas = document.getElementById('vuMeter')
 const scope1 = new StereoVuMeter(vuMeterCanvas)
 player.addScope(scope1)
@@ -32,23 +34,55 @@ player.addScope(voices)
 
 player.enableSpectrum();
 
-player.onSongInfoUpdated = function() {
+
+function formatTime(time) {
+    const minutes = Math.floor(time / 60);
+    const seconds = Math.floor(time - minutes * 60);
+    return `${minutes}:${seconds < 10 ? '0'+seconds : seconds}`
+}
+
+// seek
+const slider = document.getElementById('seek-slider')
+slider.addEventListener('input', (e) => {
+    slider.block = true;
+})
+slider.addEventListener('change', (e) => {
+    e.preventDefault()
+    slider.block = false;
+    const el = document.getElementById('current-time')
+    el.innerHTML = formatTime(e.target.value)
+    player.seek(e.target.value);
+})
+player.onSongPositionUpdated = function() {
+    const el = document.getElementById('current-time')
+    el.innerHTML = formatTime(this.position)
+    if (!slider.block)
+        slider.value = this.position
+}
+
+// songInfo updated
+player.onSongInfoUpdated = function () {
     const e1 = document.getElementById('song-info')
     e1.innerHTML = JSON.stringify(this.songInfo, undefined, 2)
+    const el = document.getElementById('duration')
+    const slider = document.getElementById('seek-slider')
     if (this.songInfo['duration'] !== undefined) {
-        const el = document.getElementById('duration')
-        el.innerHTML = this.songInfo['duration']
+        el.innerHTML = formatTime(this.songInfo['duration'])
+        slider.max = this.songInfo['duration']
+        slider.step = 0.1
+    } else {
+        el.innerHTML = 'N/A'
     }
 }
 
 const loadFT2Button = document.getElementById('loadft2');
 loadFT2Button.addEventListener('click', async (e) => {
-    await player.load(songUrlMPT, {"processor": 'ft2'});
+    await player.load(songUrlMPT, { "processor": 'ft2' });
 });
 
 const loadmptButton = document.getElementById('loadmpt');
 loadmptButton.addEventListener('click', async (e) => {
-    await player.load(songUrlMPT, {"processor": 'openmpt'});
+    await player.load(songUrlMPT, { "processor": 'openmpt' });
 });
 
 const loadPTButton = document.getElementById('loadpt');
@@ -73,7 +107,7 @@ loadsc68Button.addEventListener('click', async (e) => {
 
 const loadAHXButton = document.getElementById('loadahx');
 loadAHXButton.addEventListener('click', async (e) => {
-    await player.load(songUrlAHX, {track:2});
+    await player.load(songUrlAHX, { track: 2 });
 });
 
 // const loadPSGButton = document.getElementById('loadpsg');

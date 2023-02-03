@@ -178,7 +178,6 @@ class FT2WorkletProcessor extends AudioWorkletProcessor {
                     chvu: this.chvu
                 });
             }
-
         }
 
         return true
