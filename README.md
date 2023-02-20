@@ -59,8 +59,8 @@ Original work by by Juergen Wothke:
 - sc68 backend: https://bitbucket.org/wothke/sc68-2.2.1/src/master/
   - emscripten worklet-compatible module from https://github.com/bobuss/sc68-2.2.1
 
-Emscripten worklet-compatible module built manually in worker mode. Will push that on a repository, maybe.
-Based on https://lib.openmpt.org/libopenmpt/
+OpenMPT: Almost unchanged from official repo:
+- https://github.com/bobuss/openmpt
 
 AHX backend by Bryc:
 - https://github.com/bryc/ahx-web-player
@@ -81,3 +81,5 @@ More format (old Soundtracker mods) by krzykos:
 - Better API (play / stop / pause / resume ?)
 - UI
 - Decide what to du at the end of a song
+- Configure the format/processor mapping
+- more formats
