@@ -1,18 +1,10 @@
 //
 // Needs
-// - lib/sc68.js
+// - lib/tinyrsid.js
 // - lib/base_backend_adapter.js
-// - lib/sc68_backend_adapter.js
+// - lib/tinyrsid_backend_adapter.jss
 
-const backendAdapter = new SC68BackendAdapter()
-
-const window = {
-    fileRequestCallback: function (name) {
-        return backendAdapter.fileRequestCallback(name)
-    }
-}
-
-class SC68WorkletProcessor extends AudioWorkletProcessor {
+class SIDWorkletProcessor extends AudioWorkletProcessor {
     constructor() {
         super();
         this.backendAdapter = backendAdapter
@@ -34,10 +26,6 @@ class SC68WorkletProcessor extends AudioWorkletProcessor {
         this.numberOfSamplesRendered = 0;
         this.numberOfSamplesToRender = 0;
         this.sourceBufferIdx = 0;
-
-        // volumes values for the 3 voices
-        this.publishChannelVU = true;
-        this.chvu = new Float32Array(32);
 
         // // additional timeout based "song end" handling
         this.currentPlaytime = 0;
@@ -273,18 +261,6 @@ class SC68WorkletProcessor extends AudioWorkletProcessor {
             // keep track how long we are playing: just filled one WebAudio buffer which will be played at
             this.currentPlaytime += outSize * this.correctSampleRate / this.sampleRate;
 
-            // update this.chvu from player channel vu
-            this.chvu[0] = this.backendAdapter.Module.ccall('emu_getVolVoice1', 'number') & 0xf;
-            this.chvu[1] = this.backendAdapter.Module.ccall('emu_getVolVoice2', 'number') & 0xf;
-            this.chvu[2] = this.backendAdapter.Module.ccall('emu_getVolVoice3', 'number') & 0xf;
-
-            if (this.publishChannelVU) {
-                this.port.postMessage({
-                    type: 'chvu',
-                    chvu: this.chvu.map(x => x/16)
-                });
-            }
-
             // silence detection at end of song
             if ((this.silenceStarttime > 0) && ((this.currentPlaytime - this.silenceStarttime) >= this.silenceTimeout * this.correctSampleRate) && (this.silenceTimeout > 0)) {
                 this.isPaused = true;  // stop playback (or this will retrigger again and again before new song is started)
@@ -298,4 +274,4 @@ class SC68WorkletProcessor extends AudioWorkletProcessor {
 }
 
 
-registerProcessor('sc68-worklet-processor', SC68WorkletProcessor);
+registerProcessor('sid-worklet-processor', SIDWorkletProcessor);

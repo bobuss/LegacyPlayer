@@ -11,7 +11,7 @@ const songUrlSC68 = 'http://modland.com/pub/modules/SC68/Jochen%20Hippel/wings%2
 const songUrlSNDH = 'http://modland.com/pub/modules/SNDH/Jochen%20Hippel/enchanted%20land.sndh'
 const songUrlAHX = 'http://modland.com/pub/modules/AHX/Android/axel%20f%20-%20the%20remodel.ahx'
 const songUrlST3 = 'http://modland.com/pub/modules/Screamtracker%203/Skaven/2nd%20reality.s3m'
-// const songUrlPSG = 'There_Are_No_Sheep.sndh'
+const songUrlSID = 'Immigrant_Song.sid'
 
 
 const audioContext = new (window.AudioContext || window.webkitAudioContext)();
@@ -71,6 +71,7 @@ player.onSongInfoUpdated = function () {
     e1.innerHTML = JSON.stringify(this.songInfo, undefined, 2)
     const el = document.getElementById('duration')
     const slider = document.getElementById('seek-slider')
+
     if (this.songInfo['duration'] !== undefined) {
         el.innerHTML = formatTime(this.songInfo['duration'])
         currentTime.innerHTML = '0:00'
@@ -124,10 +125,10 @@ loadAHXButton.addEventListener('click', async (e) => {
     await player.load(songUrlAHX, { track: 2 });
 });
 
-// const loadPSGButton = document.getElementById('loadpsg');
-// loadPSGButton.addEventListener('click', async (e) => {
-//     await player.load(songUrlPSG, {"processor": 'psgplay'});
-// });
+const loadSIDButton = document.getElementById('loadsid');
+loadSIDButton.addEventListener('click', async (e) => {
+    await player.load(songUrlSID);
+});
 
 
 

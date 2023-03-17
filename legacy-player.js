@@ -7,7 +7,7 @@
 * (http://creativecommons.org/licenses/by-nc-sa/4.0/).
 */
 
-const SUPPORTED_PROCESSORS = ['sc68', 'openmpt', 'ahx', 'pt', 'ft2', 'st3'] //, 'psgplay']
+const SUPPORTED_PROCESSORS = ['sc68', 'openmpt', 'ahx', 'pt', 'ft2', 'st3', 'sid'] //, 'psgplay']
 
 const DEFAULT_FORMAT_PROCESSOR_MAPPING = {
     'sc68': 'sc68',
@@ -15,19 +15,20 @@ const DEFAULT_FORMAT_PROCESSOR_MAPPING = {
     's3m': 'st3',
     'mod': 'pt',
     'xm': 'ft2',
-    'ahx': 'ahx'
+    'ahx': 'ahx',
+    'sid': 'sid'
 }
 
 const timestamp = Date.now()
 
 const workletProcessorCodes = {
-    'ft2': ["lib/utils.js", "lib/ft2.js", `audioworklets/ft2_worklet_processor.js?${timestamp}`],
-    'st3': ["lib/utils.js", `lib/st3.js?${timestamp}`, `audioworklets/st3_worklet_processor.js?${timestamp}`],
-    'pt': [`lib/pt.js?${timestamp}`, `audioworklets/pt_worklet_processor.js?${timestamp}`],
-    'ahx': [`lib/ahx.js?${timestamp}`, `audioworklets/ahx_worklet_processor.js?${timestamp}`],
-    'openmpt': ["lib/libopenmpt.js", `audioworklets/openmpt_worklet_processor.js?${timestamp}`],
-    'sc68': ["lib/sc68.js", "lib/sc68_backend_adapter.js", `audioworklets/sc68_worklet_processor.js?${timestamp}`],
-    //'psgplay': [`lib/libpsgplay.js?${timestamp}`, `audioworklets/psgplay_worklet_processor.js?${timestamp}`],
+    'ft2': ["lib/utils.js", "lib/ft2.js", `audioworklets/ft2_worklet_processor.js?t=${timestamp}`],
+    'st3': ["lib/utils.js", `lib/st3.js?t=${timestamp}`, `audioworklets/st3_worklet_processor.js?t=${timestamp}`],
+    'pt': [`lib/pt.js?t=${timestamp}`, `audioworklets/pt_worklet_processor.js?t=${timestamp}`],
+    'ahx': [`lib/ahx.js?t=${timestamp}`, `audioworklets/ahx_worklet_processor.js?t=${timestamp}`],
+    'openmpt': ["lib/libopenmpt.js", `audioworklets/openmpt_worklet_processor.js?t=${timestamp}`],
+    'sc68': ["lib/sc68.js", "lib/base_backend_adapter.js", "lib/sc68_backend_adapter.js", `audioworklets/sc68_worklet_processor.js?${timestamp}`],
+    'sid': ["lib/sid.js", "lib/base_backend_adapter.js", "lib/sid_backend_adapter.js", `audioworklets/sid_worklet_processor.js?${timestamp}`],
 };
 
 // from https://github.com/padenot/ringbuf.js/blob/main/public/example/utils.js
@@ -158,7 +159,7 @@ export class LegacyPlayer {
                     let concatenatedCode = await URLFromFiles(workletProcessorCodes[processorName])
                     await this.audioContext.audioWorklet.addModule(concatenatedCode);
                 } else {
-                    await this.audioContext.audioWorklet.addModule(`audioworklets/${processorName}_worklet_processor.js?${timestamp}`)
+                    await this.audioContext.audioWorklet.addModule(`audioworklets/${processorName}_worklet_processor.js?t=${timestamp}`)
                 }
 
                 const audioWorkletNode = new AudioWorkletNode(
@@ -204,7 +205,7 @@ export class LegacyPlayer {
 
     async onmessage(event) {
         const { data } = event;
-
+        console.log('onmessage ' + data.type)
         switch (data.type) {
 
             case 'songInfoUpdated':
