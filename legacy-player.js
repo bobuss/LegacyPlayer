@@ -7,29 +7,62 @@
 * (http://creativecommons.org/licenses/by-nc-sa/4.0/).
 */
 
-const SUPPORTED_PROCESSORS = ['sc68', 'openmpt', 'ahx', 'pt', 'ft2', 'st3', 'sid'] //, 'psgplay']
+// used to disable browser caching when loading worklets
+const DEBUG_MODE = true;
+
+const SUPPORTED_PROCESSORS = ['sc68', 'openmpt', 'ahx', 'pt', 'ft2', 'st3', 'sid'];
 
 const DEFAULT_FORMAT_PROCESSOR_MAPPING = {
     'sc68': 'sc68',
     'sndh': 'sc68',
-    's3m': 'st3',
-    'mod': 'pt',
-    'xm': 'ft2',
+    //'s3m': 'st3',
+    's3m'   : 'openmpt',
+    //'mod': 'pt',
+    'mod'   : 'openmpt',
+    //'xm': 'ft2',
+    'xm'    : 'openmpt',
     'ahx': 'ahx',
-    'sid': 'sid'
+    'sid': 'sid',
+    'psid': 'sid',
+    'it'    : 'openmpt',
+    'ult'   : 'openmpt',
+    'symmod': 'openmpt',
+    'stp'   : 'openmpt',
+    'sfx'   : 'openmpt',
+    'stm'   : 'openmpt',
+    'ptm'   : 'openmpt',
+    'okta'  : 'openmpt',
+    'mmd3'  : 'openmpt',
+    'mmd2'  : 'openmpt',
+    'mmd1'  : 'openmpt',
+    'mmd0'  : 'openmpt',
+    'mtm'   : 'openmpt',
+    'mt2'   : 'openmpt',
+    'mdl'   : 'openmpt',
+    'dbm'   : 'openmpt',
+    'amf'   : 'openmpt',
+    '669'   : 'openmpt',
+    'digi'  : 'openmpt',
+    'dtm'   : 'openmpt',
 }
 
 const timestamp = Date.now()
 
 const workletProcessorCodes = {
-    'ft2': ["lib/utils.js", "lib/ft2.js", `audioworklets/ft2_worklet_processor.js?t=${timestamp}`],
-    'st3': ["lib/utils.js", `lib/st3.js?t=${timestamp}`, `audioworklets/st3_worklet_processor.js?t=${timestamp}`],
-    'pt': [`lib/pt.js?t=${timestamp}`, `audioworklets/pt_worklet_processor.js?t=${timestamp}`],
-    'ahx': [`lib/ahx.js?t=${timestamp}`, `audioworklets/ahx_worklet_processor.js?t=${timestamp}`],
-    'openmpt': ["lib/libopenmpt.js", `audioworklets/openmpt_worklet_processor.js?t=${timestamp}`],
-    'sc68': ["lib/sc68.js", "lib/base_backend_adapter.js", "lib/sc68_backend_adapter.js", `audioworklets/sc68_worklet_processor.js?${timestamp}`],
-    'sid': ["lib/sid.js", "lib/base_backend_adapter.js", "lib/sid_backend_adapter.js", `audioworklets/sid_worklet_processor.js?${timestamp}`],
+    'ft2': ["lib/utils.js", "lib/ft2.js", "audioworklets/ft2_worklet_processor.js"],
+    'st3': ["lib/utils.js", "lib/st3.js", "audioworklets/st3_worklet_processor.js"],
+    'pt': ["lib/pt.js", "audioworklets/pt_worklet_processor.js"],
+    'ahx': ["lib/ahx.js", "audioworklets/ahx_worklet_processor.js"],
+    'openmpt': ["lib/libopenmpt.js", "audioworklets/openmpt_worklet_processor.js"],
+    'sc68': ["lib/sc68.js", "lib/base_backend_adapter.js", "lib/sc68_backend_adapter.js", "audioworklets/sc68_worklet_processor.js"],
+    'sid': [`lib/sid.js`, "lib/base_backend_adapter.js", "lib/sid_backend_adapter.js", "audioworklets/sid_worklet_processor.js"],
 };
+
+if (DEBUG_MODE) {
+    Object.keys(workletProcessorCodes).forEach( format => {
+        workletProcessorCodes[format] = workletProcessorCodes[format].map(item => item + `?t=${timestamp}`)
+    });
+}
 
 // from https://github.com/padenot/ringbuf.js/blob/main/public/example/utils.js
 function URLFromFiles(files) {
@@ -93,8 +126,7 @@ export class LegacyPlayer {
         this.audioContext = audioContext
         this.sampleRate = this.audioContext.sampleRate;
 
-        const audioworkletSupport = !!AudioWorkletNode.toString().match(/native code/);
-        if (!audioworkletSupport) {
+        if ('AudioWorklet' in window.AudioContext.prototype) {
             alert('Browser not supporter. Needs AudioWorklet')
         }
 
@@ -152,15 +184,18 @@ export class LegacyPlayer {
         } else {
 
             if (this.processors[processorName] === undefined) {
-
+                let concatenatedCode;
                 if (workletProcessorCodes[processorName] !== undefined) {
                     // cross browser hack from
                     // https://mtg.github.io/essentia.js/docs/api/tutorial-2.%20Real-time%20analysis.html#using-the-web-audio-api-with-audioworklets
-                    let concatenatedCode = await URLFromFiles(workletProcessorCodes[processorName])
-                    await this.audioContext.audioWorklet.addModule(concatenatedCode);
+                    concatenatedCode = await URLFromFiles(workletProcessorCodes[processorName])
                 } else {
-                    await this.audioContext.audioWorklet.addModule(`audioworklets/${processorName}_worklet_processor.js?t=${timestamp}`)
+                    concatenatedCode = `audioworklets/${processorName}_worklet_processor.js`;
+                    if (DEBUG_MODE)
+                        concatenatedCode = concatenatedCode + `?t=${timestamp}`;
                 }
+
+                await this.audioContext.audioWorklet.addModule(concatenatedCode);
 
                 const audioWorkletNode = new AudioWorkletNode(
                     this.audioContext,
