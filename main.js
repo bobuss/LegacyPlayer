@@ -11,7 +11,7 @@ const songUrlSC68 = 'http://modland.com/pub/modules/SC68/Jochen%20Hippel/wings%2
 const songUrlSNDH = 'http://modland.com/pub/modules/SNDH/Jochen%20Hippel/enchanted%20land.sndh'
 const songUrlAHX = 'http://modland.com/pub/modules/AHX/Android/axel%20f%20-%20the%20remodel.ahx'
 const songUrlST3 = 'http://modland.com/pub/modules/Screamtracker%203/Skaven/2nd%20reality.s3m'
-const songUrlSID = 'presets.psid'
+const songUrlSID = 'Mus1k.sid'
 
 
 const audioContext = new (window.AudioContext || window.webkitAudioContext)();
@@ -102,12 +102,12 @@ loadmptButton.addEventListener('click', async (e) => {
 
 const loadPTButton = document.getElementById('loadpt');
 loadPTButton.addEventListener('click', async (e) => {
-    await player.load(songUrlPT)
+    await player.load(songUrlPT, { "processor": 'pt' })
 });
 
 const loadPTButton2 = document.getElementById('loadpt2');
 loadPTButton2.addEventListener('click', async (e) => {
-    await player.load(songUrlPT2)
+    await player.load(songUrlPT2, { "processor": 'pt' })
 });
 
 const loadSNDHButton = document.getElementById('loadsndh');

@@ -49,7 +49,7 @@ class SIDWorkletProcessor extends AudioWorkletProcessor {
 
     onmessage(e) {
         const { data } = e;
-        console.log('onmessage ' + data.type)
+
         switch (data.type) {
 
             case 'loadMusicData':
@@ -207,13 +207,17 @@ class SIDWorkletProcessor extends AudioWorkletProcessor {
             this.numberOfSamplesRendered = 0;
 
             while (this.numberOfSamplesRendered < outSize) {
+
                 if (this.numberOfSamplesToRender === 0) {
+
                     let status;
                     if ((this.currentTimeout > 0) && (this.currentPlaytime > this.currentTimeout)) {
                         console.log("'song end' forced after " + this.currentTimeout / this.correctSampleRate + " secs");
                         status = 1;
                     } else {
+
                         status = this.backendAdapter.computeAudioSamples()
+
                     }
 
                     if (status !== 0) {
@@ -239,10 +243,13 @@ class SIDWorkletProcessor extends AudioWorkletProcessor {
                         }
                     }
                     // refresh just in case they are not using one fixed buffer..
+
                     this.sourceBuffer = this.backendAdapter.getAudioBuffer();
+
                     this.sourceBufferLen = this.backendAdapter.getAudioBufferLength();
 
                     if (this.pan != null)
+
                     this.backendAdapter.applyPanning(this.sourceBuffer, this.sourceBufferLen, this.pan + 1.0);
 
                     this.numberOfSamplesToRender = this.backendAdapter.getResampledAudio(this.sourceBuffer, this.sourceBufferLen);
@@ -258,6 +265,7 @@ class SIDWorkletProcessor extends AudioWorkletProcessor {
                     this.copySamplesMono(resampleBuffer, output1, outSize);
                 }
             }
+
             // keep track how long we are playing: just filled one WebAudio buffer which will be played at
             this.currentPlaytime += outSize * this.correctSampleRate / this.sampleRate;
 
