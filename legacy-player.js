@@ -250,7 +250,7 @@ export class LegacyPlayer {
                 break;
 
             case 'fileRequestCallback':
-                const url = 'replay/' + data.fullFilename + '.bin';
+                const url = '/replay/' + data.fullFilename + '.bin';
                 await fetch(url)
                     .then(response => {
                         if (!response.ok) {
