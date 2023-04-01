@@ -10,40 +10,41 @@
 // used to disable browser caching when loading worklets
 const DEBUG_MODE = true;
 
-const SUPPORTED_PROCESSORS = ['sc68', 'openmpt', 'ahx', 'pt', 'ft2', 'st3', 'sid'];
+const SUPPORTED_PROCESSORS = ['sc68', 'openmpt', 'ahx', 'pt', 'ft2', 'st3', 'sid', 'vgm'];
 
 const DEFAULT_FORMAT_PROCESSOR_MAPPING = {
     'sc68': 'sc68',
     'sndh': 'sc68',
     //'s3m': 'st3',
-    's3m'   : 'openmpt',
+    's3m': 'openmpt',
     //'mod': 'pt',
-    'mod'   : 'openmpt',
+    'mod': 'openmpt',
     //'xm': 'ft2',
-    'xm'    : 'openmpt',
+    'xm': 'openmpt',
     'ahx': 'ahx',
     'sid': 'sid',
     'psid': 'sid',
-    'it'    : 'openmpt',
-    'ult'   : 'openmpt',
+    'it': 'openmpt',
+    'ult': 'openmpt',
     'symmod': 'openmpt',
-    'stp'   : 'openmpt',
-    'sfx'   : 'openmpt',
-    'stm'   : 'openmpt',
-    'ptm'   : 'openmpt',
-    'okta'  : 'openmpt',
-    'mmd3'  : 'openmpt',
-    'mmd2'  : 'openmpt',
-    'mmd1'  : 'openmpt',
-    'mmd0'  : 'openmpt',
-    'mtm'   : 'openmpt',
-    'mt2'   : 'openmpt',
-    'mdl'   : 'openmpt',
-    'dbm'   : 'openmpt',
-    'amf'   : 'openmpt',
-    '669'   : 'openmpt',
-    'digi'  : 'openmpt',
-    'dtm'   : 'openmpt',
+    'stp': 'openmpt',
+    'sfx': 'openmpt',
+    'stm': 'openmpt',
+    'ptm': 'openmpt',
+    'okta': 'openmpt',
+    'mmd3': 'openmpt',
+    'mmd2': 'openmpt',
+    'mmd1': 'openmpt',
+    'mmd0': 'openmpt',
+    'mtm': 'openmpt',
+    'mt2': 'openmpt',
+    'mdl': 'openmpt',
+    'dbm': 'openmpt',
+    'amf': 'openmpt',
+    '669': 'openmpt',
+    'digi': 'openmpt',
+    'dtm': 'openmpt',
+    'vgz': 'vgm'
 }
 
 const timestamp = Date.now()
@@ -56,10 +57,15 @@ const workletProcessorCodes = {
     'openmpt': ["/lib/libopenmpt.js", "/audioworklets/openmpt_worklet_processor.js"],
     'sc68': ["/lib/sc68.js", "/lib/base_backend_adapter.js", "/lib/sc68_backend_adapter.js", "/audioworklets/sc68_worklet_processor.js"],
     'sid': ["/lib/sid.js", "/lib/base_backend_adapter.js", "/lib/sid_backend_adapter.js", "/audioworklets/sid_worklet_processor.js"],
+    'vgm': ["/lib/vgm.js", "/lib/base_backend_adapter.js", "/lib/vgm_backend_adapter.js", "/audioworklets/vgm_worklet_processor.js"],
 };
 
+const workletRequiredFiles = {
+    'vgm': ["VGMPlay.ini", "yrw801.rom"]
+}
+
 if (DEBUG_MODE) {
-    Object.keys(workletProcessorCodes).forEach( format => {
+    Object.keys(workletProcessorCodes).forEach(format => {
         workletProcessorCodes[format] = workletProcessorCodes[format].map(item => item + `?t=${timestamp}`)
     });
 }
@@ -118,7 +124,7 @@ export class LegacyPlayer {
     onTrackReadyToPlay = function () { console.log('onTrackReadyToPlay') }
     onTrackEnd = function () { console.log('onTrackEnd') }
     onSongInfoUpdated = function () { console.log('onSongInfoUpdated') }
-    onSongPositionUpdated = function() {}
+    onSongPositionUpdated = function () { }
 
 
     constructor(audioContext) {
@@ -208,6 +214,30 @@ export class LegacyPlayer {
                 audioWorkletNode.port.onmessage = this.onmessage.bind(this);
                 audioWorkletNode.port.start()
 
+                if (processorName in workletRequiredFiles) {
+                    let fetches = [];
+                    for (let url of workletRequiredFiles[processorName]) {
+                        fetches.push(
+                            fetch(url)
+                                .then(response => {
+                                    if (!response.ok) {
+                                        throw new Error(response.status);
+                                    }
+                                    return response.arrayBuffer();
+                                })
+                                .then(buffer => {
+                                    audioWorkletNode.port.postMessage({
+                                        type: 'registerFileData',
+                                        name: url,
+                                        payload: new Uint8Array(buffer)
+                                    })
+                                })
+                        );
+                    }
+                    console.log(fetches)
+                    Promise.all(fetches);
+                }
+
                 this.processors[processorName] = audioWorkletNode;
 
                 console.log('registered ' + processorName + '-worklet-processor')
@@ -225,6 +255,7 @@ export class LegacyPlayer {
             this.audioWorkletNode.disconnect(this.splitter)
         }
         await this.loadWorkletProcessor(processorName)
+
         this.processorName = processorName
         this.audioWorkletNode.connect(this.splitter)
         console.log(`"${processorName}" processor loaded`)
@@ -240,6 +271,7 @@ export class LegacyPlayer {
 
     async onmessage(event) {
         const { data } = event;
+        let self = this;
         if (DEBUG_MODE)
             console.log('onmessage ' + data.type)
         switch (data.type) {
@@ -250,8 +282,8 @@ export class LegacyPlayer {
                 break;
 
             case 'fileRequestCallback':
-                const url = '/replay/' + data.fullFilename + '.bin';
-                await fetch(url)
+                const url1 = '/replay/' + data.fullFilename + '.bin';
+                await fetch(url1)
                     .then(response => {
                         if (!response.ok) {
                             throw new Error(response.status);
@@ -284,7 +316,7 @@ export class LegacyPlayer {
             case 'songPositionUpdated':
                 this.position = data.position
                 this.onSongPositionUpdated()
-                break
+                break;
 
         }
     }
@@ -334,7 +366,7 @@ export class LegacyPlayer {
         const sp = filename.split('/');
         const fn = sp[sp.length - 1];
         let path = filename.substring(0, filename.lastIndexOf("/"));
-        if (path.lenght) path = path + "/";
+        if (path.length) path = path + "/";
 
         return [path, fn];
     }
@@ -556,7 +588,7 @@ export class LegacyPlayer {
             this.audioWorkletNode.port.postMessage({
                 type: 'loadMusicData',
                 sampleRate: 44100,
-                path: pfn[1],
+                path: "/",
                 filename: pfn[1],
                 data: data,
                 options: options

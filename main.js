@@ -7,12 +7,12 @@ import { VoiceMeter } from './visualisations/voice-meter.js';
 const songUrlMPT = 'http://modland.com/pub/modules/Fasttracker%202/Jugi/onward%20(party%20version).xm'
 const songUrlPT = 'http://modland.com/pub/modules/Soundtracker/Karsten%20Obarski/amegas.mod'
 const songUrlPT2 = 'dope.mod'
-const songUrlSC68 = 'http://modland.com/pub/modules/SC68/Jochen%20Hippel/wings%20of%20death%20-%20title.sc68'
+const songUrlSC68 = 'jam.sc68'
 const songUrlSNDH = 'http://modland.com/pub/modules/SNDH/Jochen%20Hippel/enchanted%20land.sndh'
 const songUrlAHX = 'http://modland.com/pub/modules/AHX/Android/axel%20f%20-%20the%20remodel.ahx'
 const songUrlST3 = 'http://modland.com/pub/modules/Screamtracker%203/Skaven/2nd%20reality.s3m'
 const songUrlSID = 'Mus1k.sid'
-
+const songUrlVGM = 'Covered.vgz'
 
 const audioContext = new (window.AudioContext || window.webkitAudioContext)();
 
@@ -129,6 +129,13 @@ const loadSIDButton = document.getElementById('loadsid');
 loadSIDButton.addEventListener('click', async (e) => {
     await player.load(songUrlSID);
 });
+
+const loadVGMButton = document.getElementById('loadvgm');
+loadVGMButton.addEventListener('click', async (e) => {
+    await player.load(songUrlVGM);
+});
+
+
 
 
 

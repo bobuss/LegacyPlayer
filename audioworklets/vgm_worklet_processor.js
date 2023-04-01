@@ -1,10 +1,12 @@
 //
 // Needs
-// - lib/sc68.js
+// - lib/vgm.js
 // - lib/base_backend_adapter.js
-// - lib/sc68_backend_adapter.js
+// - lib/vgm_backend_adapter.js
 
-class SC68WorkletProcessor extends AudioWorkletProcessor {
+const backendAdapter = new VGMBackendAdapter()
+
+class VGMWorkletProcessor extends AudioWorkletProcessor {
     constructor() {
         super();
         this.backendAdapter = backendAdapter
@@ -27,10 +29,6 @@ class SC68WorkletProcessor extends AudioWorkletProcessor {
         this.numberOfSamplesToRender = 0;
         this.sourceBufferIdx = 0;
 
-        // volumes values for the 3 voices
-        this.publishChannelVU = true;
-        this.chvu = new Float32Array(32);
-
         // // additional timeout based "song end" handling
         this.currentPlaytime = 0;
         this.currentTimeout = -1;
@@ -42,10 +40,7 @@ class SC68WorkletProcessor extends AudioWorkletProcessor {
         this.isPaused = true;          // 'end' of a song also triggers this state
 
         // // setup asyc completion of initialization
-        this.isPlayerReady = false;    // this state means that the player is initialized and can be used now
         this.isSongReady = false;    // initialized (including file-loads that might have been necessary)
-        this.initInProgress = false;
-
 
         this.port.onmessage = this.onmessage.bind(this);
 
@@ -53,12 +48,13 @@ class SC68WorkletProcessor extends AudioWorkletProcessor {
 
     onmessage(e) {
         const { data } = e;
-        console.log('onmessage ' + data.type)
+
         switch (data.type) {
 
             case 'loadMusicData':
                 this.songInfo = {}
-                this.isSongReady = (this.backendAdapter.loadMusicData(data.sampleRate, data.path, data.filename, data.data, data.options) == 0)
+                this.backendAdapter.registerFileData(data.filename, data.data);
+                this.isSongReady = (this.backendAdapter.loadMusicData(data.sampleRate, data.path, data.filename, data.data, data.options) == 0);
                 break;
 
             case 'evalTrackOptions':
@@ -211,13 +207,17 @@ class SC68WorkletProcessor extends AudioWorkletProcessor {
             this.numberOfSamplesRendered = 0;
 
             while (this.numberOfSamplesRendered < outSize) {
+
                 if (this.numberOfSamplesToRender === 0) {
+
                     let status;
                     if ((this.currentTimeout > 0) && (this.currentPlaytime > this.currentTimeout)) {
                         console.log("'song end' forced after " + this.currentTimeout / this.correctSampleRate + " secs");
                         status = 1;
                     } else {
+
                         status = this.backendAdapter.computeAudioSamples()
+
                     }
 
                     if (status !== 0) {
@@ -243,10 +243,13 @@ class SC68WorkletProcessor extends AudioWorkletProcessor {
                         }
                     }
                     // refresh just in case they are not using one fixed buffer..
+
                     this.sourceBuffer = this.backendAdapter.getAudioBuffer();
+
                     this.sourceBufferLen = this.backendAdapter.getAudioBufferLength();
 
                     if (this.pan != null)
+
                     this.backendAdapter.applyPanning(this.sourceBuffer, this.sourceBufferLen, this.pan + 1.0);
 
                     this.numberOfSamplesToRender = this.backendAdapter.getResampledAudio(this.sourceBuffer, this.sourceBufferLen);
@@ -262,20 +265,9 @@ class SC68WorkletProcessor extends AudioWorkletProcessor {
                     this.copySamplesMono(resampleBuffer, output1, outSize);
                 }
             }
+
             // keep track how long we are playing: just filled one WebAudio buffer which will be played at
             this.currentPlaytime += outSize * this.correctSampleRate / this.sampleRate;
-
-            // update this.chvu from player channel vu
-            this.chvu[0] = this.backendAdapter.Module.ccall('emu_getVolVoice1', 'number') & 0xf;
-            this.chvu[1] = this.backendAdapter.Module.ccall('emu_getVolVoice2', 'number') & 0xf;
-            this.chvu[2] = this.backendAdapter.Module.ccall('emu_getVolVoice3', 'number') & 0xf;
-
-            if (this.publishChannelVU) {
-                this.port.postMessage({
-                    type: 'chvu',
-                    chvu: this.chvu.map(x => x/16)
-                });
-            }
 
             // silence detection at end of song
             if ((this.silenceStarttime > 0) && ((this.currentPlaytime - this.silenceStarttime) >= this.silenceTimeout * this.correctSampleRate) && (this.silenceTimeout > 0)) {
@@ -290,4 +282,4 @@ class SC68WorkletProcessor extends AudioWorkletProcessor {
 }
 
 
-registerProcessor('sc68-worklet-processor', SC68WorkletProcessor);
+registerProcessor('vgm-worklet-processor', VGMWorkletProcessor);
