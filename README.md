@@ -13,6 +13,8 @@ Supported backends:
 - **ft2**: xm
 - **st3**: sm3
 - **pt**: mod
+- **sid**: psid
+- **vgm**: vgz
 
 Note: Openmpt backend gives the best results, but it does not support vumeters by channels.
 
@@ -76,10 +78,5 @@ More format (old Soundtracker mods) by krzykos:
 
 
 ## TODO
-- seek
-- getInfo with common fields
-- Better API (play / stop / pause / resume ?)
 - UI
-- Decide what to du at the end of a song
-- Configure the format/processor mapping
 - more formats
