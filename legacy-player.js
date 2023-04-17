@@ -44,8 +44,24 @@ const DEFAULT_FORMAT_PROCESSOR_MAPPING = {
     '669': 'openmpt',
     'digi': 'openmpt',
     'dtm': 'openmpt',
+    'mptm':  'openmpt',
+    'ams':  'openmpt',
+    'c67': 'openmpt',
+    'dmf': 'openmpt',
+    'dsm': 'openmpt',
+    'dsym': 'openmpt',
+    'far': 'openmpt',
+    'fmt': 'openmpt',
+    'imf': 'openmpt',
+    'med': 'openmpt',
+    'mms': 'openmpt',
+    'plm': 'openmpt',
+    'psm': 'openmpt',
+    'gdm': 'openmpt',
+    'mo3': 'openmpt',
     'vgz': 'vgm'
 }
+
 
 const timestamp = Date.now()
 
@@ -61,7 +77,7 @@ const workletProcessorCodes = {
 };
 
 const workletRequiredFiles = {
-    'vgm': ["VGMPlay.ini", "yrw801.rom"]
+    'vgm': ["/VGMPlay.ini", "/yrw801.rom"]
 }
 
 if (DEBUG_MODE) {
@@ -234,7 +250,6 @@ export class LegacyPlayer {
                                 })
                         );
                     }
-                    console.log(fetches)
                     Promise.all(fetches);
                 }
 
@@ -271,9 +286,9 @@ export class LegacyPlayer {
 
     async onmessage(event) {
         const { data } = event;
+
         let self = this;
-        if (DEBUG_MODE)
-            console.log('onmessage ' + data.type)
+
         switch (data.type) {
 
             case 'songInfoUpdated':

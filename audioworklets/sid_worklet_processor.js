@@ -239,7 +239,7 @@ class SIDWorkletProcessor extends AudioWorkletProcessor {
                             this.port.postMessage({
                                 type: 'onTrackEnd'
                             });
-                            return;
+                            return true;
                         }
                     }
                     // refresh just in case they are not using one fixed buffer..

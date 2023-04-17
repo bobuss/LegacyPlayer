@@ -201,7 +201,6 @@ class VGMWorkletProcessor extends AudioWorkletProcessor {
                 if (genStereo) { output2[i] = 0; }
             }
         } else {
-
             const outSize = output1.length;
 
             this.numberOfSamplesRendered = 0;
@@ -239,7 +238,7 @@ class VGMWorkletProcessor extends AudioWorkletProcessor {
                             this.port.postMessage({
                                 type: 'onTrackEnd'
                             });
-                            return;
+                            return true;
                         }
                     }
                     // refresh just in case they are not using one fixed buffer..

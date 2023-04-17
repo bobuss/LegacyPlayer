@@ -12,7 +12,7 @@ const songUrlSNDH = 'http://modland.com/pub/modules/SNDH/Jochen%20Hippel/enchant
 const songUrlAHX = 'http://modland.com/pub/modules/AHX/Android/axel%20f%20-%20the%20remodel.ahx'
 const songUrlST3 = 'http://modland.com/pub/modules/Screamtracker%203/Skaven/2nd%20reality.s3m'
 const songUrlSID = 'Mus1k.sid'
-const songUrlVGM = 'Covered.vgz'
+const songUrlVGM = 'opening.vgz'
 
 const audioContext = new (window.AudioContext || window.webkitAudioContext)();
 
